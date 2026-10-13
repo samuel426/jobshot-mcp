@@ -1,0 +1,16 @@
+{
+  "version": "0.1",
+  "job_fit": {
+    "required_qualifications": 30,
+    "relevant_skills_and_experience": 30,
+    "evidence_and_results": 25,
+    "preferred_qualifications": 15
+  },
+  "essay_question": {
+    "answers_question": 25,
+    "job_relevance": 25,
+    "specific_evidence": 30,
+    "clarity": 15,
+    "format_compliance": 5
+  }
+}
