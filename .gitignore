@@ -1,0 +1,37 @@
+# User-owned source material and generated application records
+/개인 자료/**
+!/개인 자료/.gitkeep
+/공고/**
+!/공고/.gitkeep
+/dashboard/**
+!/dashboard/.gitkeep
+/.jobshot/
+/inbox/
+/exports/
+/tmp/
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+credentials*.json
+client_secret*.json
+token.json
+tokens.json
+*.pem
+*.key
+.mcp.json
+/.codex/
+/.claude/
+
+# Dependencies, build output and diagnostics
+node_modules/
+dist/
+coverage/
+*.log
+.venv/
+__pycache__/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
