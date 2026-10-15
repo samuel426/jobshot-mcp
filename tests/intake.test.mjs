@@ -184,7 +184,8 @@ test('oversized pixel dimensions and overly long destination paths fail before s
   writeFileSync(join(root, 'inbox', 'large-pixels.png'), large);
   await assert.rejects(postingImport(workspace, input({ image_path: 'large-pixels.png' })), { code: 'INVALID_IMAGE' });
   assert.deepEqual(readdirSync(join(root, '공고')), []);
-  const nested = join(root, '긴'.repeat(Math.max(1, 175 - root.length)));
+  // Keep each component below Linux's byte limit while testing total path length.
+  const nested = join(root, 'x'.repeat(Math.max(1, 175 - root.length)));
   mkdirSync(nested);
   const longWorkspace = new Workspace(nested);
   await image(nested);
