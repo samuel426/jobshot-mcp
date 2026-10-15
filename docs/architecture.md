@@ -1,6 +1,7 @@
 # 구조와 데이터 설계
 
-상태: 구현 전 설계. 아래 도구 이름과 필드는 계약 초안이며 실행 가능한 API가 아니다.
+상태: 1단계 첫 구현. `profile_list`, `profile_read`, `posting_import`만 실행 가능하다.
+나머지 도구와 서류·달력 필드는 후속 설계다. 사용법은 [시작하기](getting-started.md)를 따른다.
 
 ## 역할 분리
 
@@ -10,7 +11,9 @@
 - HTML: 등록된 공고만 포함한 생성물이다. 원본 데이터는 JSON이고 HTML을 직접 편집해 상태를 바꾸지 않는다.
 
 별도의 AI API 키나 개발자 중계 서버를 필수로 만들지 않는 방향으로 설계한다.
-언어·SDK·패키징은 1단계 시작 시 설치 환경과 공식 문서를 확인해 결정한다.
+Node.js 24 + TypeScript, 공식 MCP TypeScript SDK v2.3.1의 stdio 전송을 사용한다.
+Zod는 입력 검증, sharp는 이미지 디코딩 검증을 담당한다. 정확한 버전은 package-lock.json으로 고정한다.
+공식 MCP 클라이언트와 2025-11-25 JSON-RPC 연결을 테스트한다. npm 공개 배포는 아직 하지 않는다.
 
 ## 작업 폴더
 
@@ -44,7 +47,7 @@ skills/jobshot-coach/SKILL.md         사용자 지원 절차, 공개 가능
 | source_images | 원본·분할본의 작업 폴더 기준 상대 경로 |
 | deadline | 원문, 날짜, 시각, 시간대, 확정 여부 |
 | requirements | 필수·우대·전형별 요구사항과 원문 근거 |
-| status | analyzed / tracked / submitted / closed / archived |
+| status | imported / analyzed / tracked / submitted / closed / archived |
 | profile_sources | 사용한 개인 파일의 상대 경로·해시·확인 시각 |
 | evaluation | 평가 기준 버전, 근거, 정보 부족 항목, 점수 |
 | calendar | Google calendar_id·event_id·동기화 상태, 토큰은 넣지 않음 |
@@ -60,6 +63,14 @@ skills/jobshot-coach/SKILL.md         사용자 지원 절차, 공개 가능
 - 긴 이미지는 원본을 수정하지 않고 읽기 가능한 분할본을 만든다. 분할 좌표·겹침·순서를 기록한다.
 - 수치 임계값과 실제 분할 품질은 1단계의 가상 긴 공고 이미지로 결정한다.
 - 파일 쓰기는 임시 파일 후 교체를 사용하고 실패 시 기존 기록을 보존한다. 동시 쓰기 충돌도 처리한다.
+
+첫 구현은 `.jobshot/import.lock` 디렉터리로 저장 작업을 직렬화하고,
+완성된 `.pending-*` 폴더를 최종 이름으로 옮긴다. 중복은 이미지 해시와 정규화한 입력 메타데이터로 식별한다.
+현재 조회/저장 도구는 지정 작업 폴더를 기준으로 경로·정션·파일 크기를 검사한다.
+이는 악성 로컬 프로세스의 동시 파일 교체까지 격리하는 OS 샌드박스를 대신하지 않는다.
+
+원본 저장만 끝난 상태를 `analyzed`라고 부르지 않기 위해 `imported`를 추가했다.
+평가·일정 등록은 수행하지 않는다. 개인 자료 본문 추출은 UTF-8 TXT·MD·JSON부터 지원한다.
 
 ## 날짜·달력
 

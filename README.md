@@ -2,9 +2,10 @@
 
 채용공고 캡처를 지원 일정과 나만의 취업 준비 계획으로 바꾸는 개인용 MCP 프로젝트.
 
-> 현재 상태: 0단계 — 설계와 협업 기반. 아직 실행 가능한 MCP 서버, 달력, Google 연동은 없습니다.
+> 현재 상태: 1단계 첫 구현 — 개인 자료 조회와 공고 이미지 저장 MCP.
+> 달력, AI 평가 자동화, Google 연동, 긴 이미지 분할은 아직 없습니다.
 
-## 만들고 있는 경험
+## 목표하는 경험
 
 1. 사용자가 `개인 자료/`에 이력서·경험·프로젝트 자료를 등록합니다.
 2. AI 대화에 채용공고 캡처를 주면 공고 정보와 개인 자료를 비교합니다.
@@ -24,12 +25,24 @@ git clone https://github.com/samuel426/jobshot-mcp.git
 cd jobshot-mcp
 ```
 
-현재는 아래 설계 문서를 검토할 수 있습니다. 설치·실행 명령은 1단계에서 추가합니다.
-자료를 준비한다면 `개인 자료/`에 넣고, 공개 이슈나 PR에는 첨부하지 마세요.
+Node.js 24에서 설치하고 빌드합니다.
+
+```sh
+npm ci
+npm run build
+node dist/cli.js --help
+```
+
+[설치·MCP 연결·공고 입력 안내](docs/getting-started.md)를 따라 연결하세요.
+현재 도구는 `profile_list`, `profile_read`, `posting_import` 세 가지입니다.
+개인 자료는 UTF-8 TXT·MD·JSON, 공고 원본은 PNG·JPEG·WebP 한 장을 지원합니다.
+프로젝트 폴더의 `inbox/`에 이미지를 저장하면 공고별 폴더에 원본 그대로 보관할 수 있습니다.
+실제 자료를 공개 이슈나 PR에는 첨부하지 마세요.
 AI에 프로젝트를 설명할 때는 [AGENTS.md](AGENTS.md)를 읽도록 요청하세요.
 
 | 문서 | 내용 |
 | --- | --- |
+| [시작하기](docs/getting-started.md) | 현재 구현 설치·도구 호출·문제 해결 |
 | [제품 요구사항](docs/requirements.md) | 첫 버전 범위와 사용자 흐름 |
 | [단계별 로드맵](docs/roadmap.md) | 0~5단계 완료 조건 |
 | [구조와 데이터](docs/architecture.md) | 로컬 파일, 공고 상태, 날짜 처리 |
@@ -40,9 +53,10 @@ AI에 프로젝트를 설명할 때는 [AGENTS.md](AGENTS.md)를 읽도록 요�
 
 ## 개발 확인
 
-Node.js가 있는 환경에서 `node scripts/check-foundation.mjs`를 실행하면
-문서 링크, 평가 배점, 개인 파일 Git 제외 규칙을 확인합니다.
-이 명령은 MCP 제품 실행 명령이 아닙니다.
+`npm run check`는 빌드, 가상 자료 기반 기능·stdio 통합 테스트,
+문서 링크·평가 배점·개인 파일 Git 제외 규칙 검사를 실행합니다.
+GitHub Actions에서도 Windows와 Linux에 같은 검사를 실행합니다.
+테스트는 `tmp/`의 격리 폴더를 사용하며 실제 개인 자료를 읽지 않습니다.
 
 ## 공개 및 라이선스 상태
 
