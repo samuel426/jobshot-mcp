@@ -30,13 +30,16 @@ GitHub 브랜치 보호는 아직 설정하지 않았다. 아래 규칙은 현�
 
 ```sh
 node scripts/check-foundation.mjs
+npm run check
 git diff --check
 git diff --cached --stat
 ```
 
 개인 자료·공고·생성 달력·인증 정보가 staged 파일에 없는지 확인한다.
 `git add -f`로 제외 규칙을 우회하지 않는다. `.gitignore`는 암호화나 접근 통제가 아니다.
-현재는 기반 문서 검증만 존재하며, 제품 테스트와 CI는 구현 단계에서 추가한다.
+개인 자료 조회·공고 저장·stdio 통합 테스트를 포함한다. GitHub Actions는 Windows와 Linux에서 검사한다.
+로컬 샌드박스가 Windows 정션 생성을 제한하면 해당 테스트가 EPERM으로 실패할 수 있다.
+제한 없는 개발 터미널에서 다시 확인하며 테스트를 건너뛰어 통과로 보고하지 않는다.
 
 ## PR 내용
 
