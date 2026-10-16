@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { cropRegions } from '../dist/images.js';
@@ -87,6 +87,9 @@ test('modified or missing crops do not silently succeed on reimport', async t =>
   writeFileSync(path, 'modified synthetic crop');
   await assert.rejects(postingImport(workspace, input()), { code: 'RECORD_CHANGED' });
   assert.equal(readFileSync(path, 'utf8'), 'modified synthetic crop');
+  unlinkSync(path);
+  await assert.rejects(postingImport(workspace, input()), { code: 'FILE_NOT_FOUND' });
+  assert.equal(existsSync(path), false);
 });
 
 test('legacy manifests stay unchanged and explicitly report missing split policy', async t => {
