@@ -15,18 +15,20 @@
 ## 진행 상태
 
 - [0단계 이슈 #1](https://github.com/samuel426/jobshot-mcp/issues/1): 완료. [PR #7](https://github.com/samuel426/jobshot-mcp/pull/7) 병합 확인.
-- 1단계: 첫 구현 — 개인 자료 조회·이미지 원본 저장·stdio 테스트. 검토 PR 준비.
-- 긴 이미지 분할과 실제 클라이언트 첨부 전달 검증이 남아 있으므로 1단계 전체 완료는 아니다.
+- 1단계: [첫 구현 PR #8](https://github.com/samuel426/jobshot-mcp/pull/8) 병합 확인. 개인 자료 조회·이미지 원본 저장·stdio 테스트 완료.
+- 2026-10-16: 긴 이미지 분할·좌표 기록과 Windows 캡처 CLI 구현. 실제 클립보드 캡처 및 클라이언트 대화창 첨부 전달 검증이 남아 있으므로 1단계 전체 완료는 아니다.
 - 2~5단계: 미착수.
 - 후속 이슈: [공고 입력 #2](https://github.com/samuel426/jobshot-mcp/issues/2), [HTML 달력 #3](https://github.com/samuel426/jobshot-mcp/issues/3), [서류·평가 #4](https://github.com/samuel426/jobshot-mcp/issues/4), [Google 연동 #5](https://github.com/samuel426/jobshot-mcp/issues/5), [배포·검증 #6](https://github.com/samuel426/jobshot-mcp/issues/6).
 
-## 현재 작업: 1단계의 첫 PR
+## 현재 작업: 1단계의 이미지 분할·입력 경로
 
-개인 자료 목록 조회와 공고 이미지 한 장의 안전한 저장부터 구현한다.
-런타임·MCP SDK와 파일 입력 경로를 구현했다. Codex/Claude UI의 첨부 전달 경로 확인은 남아 있다.
-긴 이미지 분할은 같은 단계의 별도 PR로 나눌 수 있다. 달력·서류·Google 연동을 앞당겨 넣지 않는다.
+새 공고 입력 시 원본을 보존하고 긴 이미지를 겹침·좌표가 있는 PNG 조각으로 저장한다.
+Windows 캡처 CLI → inbox 파일 → MCP 원본·분할본 저장 경로를 제공한다.
+가상 이미지로 PNG 변환과 stdio 입력을 검증했으며, 실제 클립보드와 Codex/Claude UI 전달 경로 확인은 남아 있다.
+달력·서류·Google 연동을 앞당겨 넣지 않는다.
 
-다음 PR은 긴 이미지 분할·좌표 기록과 클라이언트 입력 흐름 확인을 다룬다.
+다음 작업은 [클라이언트 실사용 체크](client-validation.md)의 미확인 항목을 검증하는 것이다.
+이전 원본 전용 기록의 분할본 추가는 아직 지원하지 않는다. 원본을 지우고 다시 입력하도록 안내하지 않는다.
 
 ## 검증해야 할 설계 항목
 
