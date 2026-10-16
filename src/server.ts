@@ -30,7 +30,7 @@ export function createServer(workspace: Workspace) {
     inputSchema: z.object({ path: z.string().min(1).max(500).describe('개인 자료/ 기준 상대 경로') }).strict(), annotations: readOnly,
   }, ({ path }) => result(() => profileRead(workspace, path)));
   server.registerTool('posting_import', {
-    title: '공고 이미지 보관', description: 'inbox/에서 PNG·JPEG·WebP 한 장(20 MiB, 4천만 픽셀 이하)을 검증 후 공고 폴더에 원본 그대로 보관합니다. 같은 이미지·메타데이터는 중복 생성하지 않습니다. AI 분석·달력 등록·이미지 분할은 하지 않습니다.',
+    title: '공고 이미지 보관', description: 'inbox/에서 PNG·JPEG·WebP 한 장(20 MiB, 4천만 픽셀 이하)을 원본 그대로 보관합니다. 표시 높이 2,000px 초과는 겹침을 둔 분할본과 좌표를 manifest로 반환합니다. 같은 입력은 중복 생성하지 않습니다. 기존 분할 정책 없는 기록은 legacy_unsplit로 알립니다. AI 분석·달력 등록은 하지 않습니다.',
     inputSchema: importSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   }, input => result(() => postingImport(workspace, input)));
