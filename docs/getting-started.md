@@ -37,6 +37,22 @@ codex mcp list
 설정 위치와 클라이언트 재연결은 [공식 OpenAI MCP 문서](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)를 따른다.
 현재 개발 작업은 사용자 전역 설정에 자동 등록하지 않는다.
 
+### 설정했는데 JobShot 도구가 보이지 않을 때
+
+앱 재시작 전에 **설정 적용 → 서버 시작 → 도구 발견 → 실제 호출** 중 어느 단계에서 막혔는지 확인한다.
+`jobshot` 대신 다른 서버 이름으로 등록했다면 아래 명령에도 같은 이름을 사용한다.
+
+1. 프로젝트 폴더에서 `codex --version`과 `codex mcp get jobshot --json`을 확인한다. Windows에서는 `Get-Command codex -All`로 실행 파일 위치도 확인한다. PATH의 별도 CLI와 데스크톱 앱에 포함된 CLI는 버전이 다를 수 있으므로 CLI 결과만으로 앱 상태를 단정하지 않는다.
+2. 서버를 찾을 수 없다면 설정 위치·서버 이름·현재 프로젝트 경로를 확인한다. 프로젝트 `.codex/config.toml`은 해당 프로젝트가 신뢰된 경우에만 적용된다. 재시작만으로 신뢰 설정이 바뀌지는 않는다.
+3. 신뢰 설정 때문에 제외됐다고 확인되면 프로젝트의 `.codex/` 설정·훅·실행 규칙을 먼저 검토한다. 사용자가 해당 폴더를 신뢰하기로 선택한 경우에만 등록한다. 상위 홈 폴더 전체를 신뢰하도록 바꾸거나 설정을 전역으로 옮겨 해결하지 않는다.
+4. 서버 설정이 적용됐지만 시작하지 못한다면 `command`의 Node 실행 파일, `args`의 `dist/cli.js`, `--workspace`의 기존 폴더가 실제 존재하는지 확인한다. 빌드가 없으면 `npm run build`를 실행한다. 공백·한글 경로는 각각 하나의 인수로 전달한다.
+5. 설정이 적용된 뒤 클라이언트를 재연결하고 `profile_list`, `profile_read`, `posting_import` 세 도구가 노출되는지 확인한다. 개인 자료 없는 테스트 작업 폴더에서 `profile_list`를 먼저 호출하고, [실사용 체크](client-validation.md)에 따라 가상 공고 저장·재입력을 확인한다.
+
+고급 진단에서는 해당 Codex 버전이 제공하는 App Server의 `config/read`에 `cwd`와 `includeLayers: true`를 전달해 프로젝트 계층의 `disabledReason`을 확인할 수 있다. 이 조회는 설정 변경이나 모델 작업을 필요로 하지 않는다. 전체 설정·로그에는 개인 경로나 인증 정보가 있을 수 있으므로 공개 이슈에는 제외 사유만 요약한다.
+
+기준: [OpenAI 설정 계층과 프로젝트 신뢰 안내](https://learn.chatgpt.com/docs/config-file/config-basic?surface=cli), [App Server 문서](https://learn.chatgpt.com/docs/app-server).
+서버 등록 조회 성공, SDK 테스트 성공, 앱 대화에서 직접 호출 성공은 각각 별도로 기록한다.
+
 ## Claude Code 연결 예시
 
 저장소에서 실행한다. `local` 범위는 해당 프로젝트의 개인 설정이다.
