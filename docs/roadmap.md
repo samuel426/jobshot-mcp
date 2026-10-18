@@ -18,6 +18,7 @@
 - 1단계: [첫 구현 PR #8](https://github.com/samuel426/jobshot-mcp/pull/8) 병합 확인. 개인 자료 조회·이미지 원본 저장·stdio 테스트 완료.
 - 2026-10-16: [PR #9](https://github.com/samuel426/jobshot-mcp/pull/9)에서 긴 이미지 분할·좌표 기록과 Windows 캡처 CLI 구현·병합.
 - 2026-10-17: Windows 실제 클립보드 저장과 Codex 대화창 첨부 파일 접근·원본 보존·재입력 확인. 프로젝트 테스트 연결 설정 추가. 앱 재연결 후 MCP 직접 호출 및 다른 클라이언트 검증이 남아 1단계 전체 완료는 아니다.
+- 2026-10-18: 재확인 결과 프로젝트 신뢰 설정 때문에 MCP 설정이 제외됨을 확인. 연결 문제 해결 안내를 보완한다. 앱 직접 호출은 여전히 미완료다.
 - 2~5단계: 미착수.
 - 후속 이슈: [공고 입력 #2](https://github.com/samuel426/jobshot-mcp/issues/2), [HTML 달력 #3](https://github.com/samuel426/jobshot-mcp/issues/3), [서류·평가 #4](https://github.com/samuel426/jobshot-mcp/issues/4), [Google 연동 #5](https://github.com/samuel426/jobshot-mcp/issues/5), [배포·검증 #6](https://github.com/samuel426/jobshot-mcp/issues/6).
 
@@ -26,7 +27,8 @@
 새 공고 입력 시 원본을 보존하고 긴 이미지를 겹침·좌표가 있는 PNG 조각으로 저장한다.
 Windows 캡처 CLI → inbox 파일 → MCP 원본·분할본 저장 경로를 제공한다.
 사용자가 첨부한 가상 공고로 Windows 실제 클립보드와 Codex 첨부 파일 전달을 확인했다.
-프로젝트 전용 테스트 MCP 설정을 추가했으며 앱 재연결 후 직접 호출, Claude Code, macOS 확인이 남아 있다.
+프로젝트 전용 테스트 MCP 설정은 추가됐지만 프로젝트 신뢰 설정 때문에 적용되지 않고 있다.
+사용자의 신뢰 등록 선택 후 설정 적용·앱 직접 호출 확인, Claude Code, macOS 확인이 남아 있다.
 달력·서류·Google 연동을 앞당겨 넣지 않는다.
 
 다음 작업은 [클라이언트 실사용 체크](client-validation.md)의 미확인 항목을 검증하는 것이다.
