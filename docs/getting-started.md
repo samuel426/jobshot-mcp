@@ -53,6 +53,25 @@ codex mcp list
 기준: [OpenAI 설정 계층과 프로젝트 신뢰 안내](https://learn.chatgpt.com/docs/config-file/config-basic?surface=cli), [App Server 문서](https://learn.chatgpt.com/docs/app-server).
 서버 등록 조회 성공, SDK 테스트 성공, 앱 대화에서 직접 호출 성공은 각각 별도로 기록한다.
 
+### 개발용 Codex 연결 검사
+
+설치된 Codex 실행 파일의 **절대 경로**를 지정하면 가상 자료만으로 App Server 연결을 재현할 수 있다.
+PATH의 오래된 CLI 대신 검증하려는 실행 파일을 직접 선택한다.
+
+```powershell
+npm run check:codex -- --codex-bin "C:/tools/codex.exe"
+```
+
+이 검사는 `tmp/` 아래 별도 `CODEX_HOME`과 가상 자료 작업 폴더를 만들고 그 안에만 MCP 설정을 쓴다.
+사용자의 신뢰 설정·MCP 설정·개인 자료·클립보드는 변경하지 않는다. 메모리 내 임시 프로토콜 세션에서 도구만 호출하며 모델 턴이나 저장되는 대화를 만들지 않는다.
+도구 3개 발견, 가상 자료 조회, 상위 경로 거부, 긴 이미지 분할 픽셀, 원본 보존, 재입력 중복, 일정 미등록을 확인한다.
+요청별 제한 시간은 30초이며 지원하지 않는 프로토콜·서버 종료·검증 실패는 종료 코드 1로 보고한다.
+결과와 가상 자료는 Git에서 제외된 `tmp/codex-check-*/`에 남는다.
+
+2026-10-19에 Windows의 Codex CLI 0.163.0-alpha.10.2로 통과했다. 다른 버전·OS는 별도 확인이 필요하다.
+설치된 Codex가 필요한 선택 검사이므로 기본 `npm run check`와 CI에는 포함하지 않는다.
+**격리 검사 성공은 실제 프로젝트의 신뢰 설정 적용이나 현재 앱 대화의 도구 갱신을 검증하지 않는다.**
+
 ## Claude Code 연결 예시
 
 저장소에서 실행한다. `local` 범위는 해당 프로젝트의 개인 설정이다.
@@ -191,5 +210,6 @@ macOS/Linux에서는 파일 입력을 사용한다. 이 명령은 AI 대화창 �
 Windows에서는 실제 PowerShell PNG 변환을 가상 Bitmap으로 검증한다. 테스트가 사용자의 클립보드를 읽거나 바꾸지는 않는다.
 프로토콜 통신 확인과 Codex/Claude UI에서 캡처 붙여넣기 확인은 별개다.
 2026-10-17에 Windows 실제 클립보드 저장과 Codex 대화창 첨부 2장의 파일 접근·보존을 확인했다.
-Codex 앱 자체의 MCP 재연결·직접 도구 호출, Claude Code, macOS는 아직 미검증이다.
+2026-10-19에 프로젝트 신뢰 설정 적용과 Codex App Server 임시 세션의 도구 발견·호출을 확인했다.
+현재 앱 대화에서 재연결 후 직접 호출, Claude Code, macOS는 아직 미검증이다.
 [클라이언트 실사용 체크](client-validation.md)에 확인 절차와 결과 범위를 기록한다.
