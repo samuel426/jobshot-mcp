@@ -12,7 +12,7 @@ const recordSchema = z.object({
   schema_version: z.literal(1),
   id: z.string().regex(/^[a-f0-9]{64}$/),
   company: z.string(), role: z.string(),
-  status: z.literal('imported'),
+  status: z.enum(['imported', 'analyzed', 'tracked', 'submitted', 'closed', 'archived']),
   image_sha256: z.string().regex(/^[a-f0-9]{64}$/),
   source_images: z.array(z.string()).length(1),
 }).passthrough();

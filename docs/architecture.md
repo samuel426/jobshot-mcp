@@ -1,7 +1,7 @@
 # 구조와 데이터 설계
 
-상태: 1단계 원본·분할본 입력 구현. `profile_list`, `profile_read`, `posting_import`만 실행 가능하다.
-나머지 도구와 서류·달력 필드는 후속 설계다. 사용법은 [시작하기](getting-started.md)를 따른다.
+상태: 2단계 로컬 월간 달력 구현. `profile_list`, `profile_read`, `posting_import`, `posting_list`, `posting_track`, `dashboard_build`를 제공한다.
+AI 평가 저장·서류·Google 연동은 후속 설계다. 사용법은 [시작하기](getting-started.md)를 따른다.
 
 ## 역할 분리
 
@@ -50,7 +50,8 @@ skills/jobshot-coach/SKILL.md         사용자 지원 절차, 공개 가능
 | status | imported / analyzed / tracked / submitted / closed / archived |
 | profile_sources | 사용한 개인 파일의 상대 경로·해시·확인 시각 |
 | evaluation | 평가 기준 버전, 근거, 정보 부족 항목, 점수 |
-| calendar | Google calendar_id·event_id·동기화 상태, 토큰은 넣지 않음 |
+| calendar | 후속 Google 연동용 필드. 로컬 등록으로 변경하지 않으며 현재 null 유지 |
+| tracking_previous_status | 로컬 등록 전 imported/analyzed 상태. 해제 시 복원하고 필드 제거 |
 | created_at / updated_at | 기록 시각 |
 
 ## 경로와 이미지
@@ -73,7 +74,7 @@ skills/jobshot-coach/SKILL.md         사용자 지원 절차, 공개 가능
 이는 악성 로컬 프로세스의 동시 파일 교체까지 격리하는 OS 샌드박스를 대신하지 않는다.
 
 원본 저장만 끝난 상태를 `analyzed`라고 부르지 않기 위해 `imported`를 추가했다.
-평가·일정 등록은 수행하지 않는다. 개인 자료 본문 추출은 UTF-8 TXT·MD·JSON부터 지원한다.
+`posting_import` 자체는 평가·일정 등록을 수행하지 않는다. 개인 자료 본문 추출은 UTF-8 TXT·MD·JSON부터 지원한다.
 재입력 시 원본과 분할본 해시를 확인한다. 이전 버전의 분할 정책 없는 기록은 `legacy_unsplit`로 반환하고 수정하지 않는다.
 기존 공고의 분할본 추가·재생성은 후속 작업이다.
 
@@ -83,7 +84,7 @@ Windows 캡처 CLI는 사용자가 실행할 때 STA PowerShell로 현재 클립
 
 ## 날짜·달력
 
-기본 시간대는 `Asia/Seoul`이며 사용자 설정으로 바꿀 수 있다.
+현재 시간대는 `Asia/Seoul`로 고정한다. 시간대 설정 기능은 후속 작업이다.
 날짜만 알면 시간을 23:59로 만들지 않고 `time: null`과 `시간 미확인`을 표시한다.
 연도나 날짜가 불명확하면 자동 일정 등록을 멈추고 해당 항목만 확인한다.
 등록을 원한 날짜 미정 공고는 달력 아래 별도 목록에 표시한다.
@@ -93,8 +94,13 @@ Windows 캡처 CLI는 사용자가 실행할 때 STA PowerShell로 현재 클립
 마감 지난 공고를 새 공고처럼 표시하지 않는다. 지난 일정도 기록은 보존한다.
 
 HTML에는 등록된 공고의 최소 정보만 넣고 개인 이력서 본문은 넣지 않는다.
-파일을 직접 열 수 있도록 필요한 데이터를 안전하게 내장하는 방식을 우선 검토한다.
+파일을 직접 열 수 있도록 필요한 데이터를 JSON으로 안전하게 내장한다. 외부 스크립트·폰트·네트워크 요청이 없다.
 공고 텍스트를 HTML로 실행하지 않도록 escape하고 링크는 http(s)만 허용한다.
+
+`posting_track`은 ID와 등록 여부를 받아 imported/analyzed ↔ tracked 상태만 변경한다. Google 필드·개인 자료·원본 이미지는 수정하지 않는다.
+입력·등록·달력 재생성은 같은 `.jobshot/import.lock`을 사용한다. 변경 파일은 같은 디렉터리의 임시 파일을 원자적으로 교체한다.
+HTML 출력 경로를 먼저 검사하고 상태를 저장한다. 그 이후 HTML 쓰기만 실패하면 `dashboard_updated:false`와 재생성 안내를 반환한다. 저장된 등록 상태를 성공/실패와 함께 명확히 알린다.
+재입력은 tracked 상태도 인식하며 등록을 취소하지 않는다. 손상된 공고·중복 ID·지원하지 않는 날짜/링크는 기존 HTML을 유지하고 오류로 알린다.
 
 ## MCP 도구 후보
 

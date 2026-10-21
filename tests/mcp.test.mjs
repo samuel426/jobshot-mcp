@@ -21,7 +21,7 @@ test('real stdio client discovers tools, reads selected material, imports and re
   try {
     await client.connect(transport);
     const { tools } = await client.listTools();
-    assert.deepEqual(tools.map(tool => tool.name).sort(), ['posting_import', 'profile_list', 'profile_read']);
+    assert.deepEqual(tools.map(tool => tool.name).sort(), ['dashboard_build', 'posting_import', 'posting_list', 'posting_track', 'profile_list', 'profile_read']);
     assert.equal(tools.find(tool => tool.name === 'profile_read').annotations.readOnlyHint, true);
     assert.equal(tools.find(tool => tool.name === 'posting_import').annotations.readOnlyHint, false);
     const list = await client.callTool({ name: 'profile_list', arguments: {} });
@@ -33,6 +33,15 @@ test('real stdio client discovers tools, reads selected material, imports and re
     assert.equal(imported.structuredContent.duplicate, false);
     const again = await client.callTool({ name: 'posting_import', arguments: input() });
     assert.equal(again.structuredContent.duplicate, true);
+    const listing = await client.callTool({ name: 'posting_list', arguments: {} });
+    assert.equal(listing.structuredContent.postings.length, 1);
+    const tracked = await client.callTool({ name: 'posting_track', arguments: { id: imported.structuredContent.posting.id, tracked: true } });
+    assert.equal(tracked.structuredContent.dashboard_updated, true);
+    const built = await client.callTool({ name: 'dashboard_build', arguments: {} });
+    assert.equal(built.structuredContent.tracked_count, 1);
+    const trackedAgain = await client.callTool({ name: 'posting_import', arguments: input() });
+    assert.equal(trackedAgain.structuredContent.duplicate, true);
+    assert.equal(trackedAgain.structuredContent.posting.status, 'tracked');
     const long = await sharp({ create: { width: 32, height: 3500, channels: 3, background: 'white' } }).png().toBuffer();
     writeFileSync(join(root, 'inbox', 'long.png'), long);
     const split = await client.callTool({ name: 'posting_import', arguments: input({ image_path: 'long.png' }) });
@@ -77,7 +86,7 @@ test('legacy 2025 MCP initialization and tools/list work over plain JSON-RPC', {
     assert.equal(initialized.result.protocolVersion, '2025-11-25');
     child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
     const list = await request(2, 'tools/list', {});
-    assert.equal(list.result.tools.length, 3);
+    assert.equal(list.result.tools.length, 6);
     assert.equal(stderr, '');
   } finally {
     lines.close();

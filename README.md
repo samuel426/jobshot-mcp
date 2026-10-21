@@ -2,8 +2,8 @@
 
 채용공고 캡처를 지원 일정과 나만의 취업 준비 계획으로 바꾸는 개인용 MCP 프로젝트.
 
-> 현재 상태: 1단계 — 개인 자료 조회, 공고 원본·분할본 저장 MCP와 Windows 캡처 저장 명령.
-> Windows 실제 캡처 저장과 Codex 첨부 파일 접근을 확인했습니다. 앱의 MCP 직접 호출은 검증 중이며 달력·AI 평가 자동화·Google 연동은 아직 없습니다.
+> 현재 상태: 2단계 — 개인 자료 조회·공고 보관·선택 등록한 공고의 로컬 월간 HTML 달력.
+> Windows 실제 캡처 저장과 Codex 대화의 입력 도구 직접 호출을 확인했습니다. 달력은 자동 동작 검증을 마쳤으며 실제 브라우저 시각 확인은 남아 있습니다. AI 평가 자동화·Google 연동은 후속 단계입니다.
 
 ## 목표하는 경험
 
@@ -34,10 +34,11 @@ node dist/cli.js --help
 ```
 
 [설치·MCP 연결·공고 입력 안내](docs/getting-started.md)를 따라 연결하세요.
-현재 도구는 `profile_list`, `profile_read`, `posting_import` 세 가지입니다.
+현재 도구는 `profile_list`, `profile_read`, `posting_import`, `posting_list`, `posting_track`, `dashboard_build` 여섯 가지입니다.
 개인 자료는 UTF-8 TXT·MD·JSON, 공고 원본은 PNG·JPEG·WebP 한 장을 지원합니다.
 프로젝트 폴더의 `inbox/`에 이미지를 저장하면 공고별 폴더에 원본 그대로 보관하고 긴 이미지는 별도로 분할합니다.
 Windows에서는 캡처 후 `node dist/capture-cli.js --workspace "작업 폴더 절대 경로"`로 현재 클립보드 이미지를 한 번 저장할 수 있습니다.
+보관한 공고 중 원하는 것만 로컬 달력에 등록하면 `dashboard/index.html`이 생성됩니다. 파일을 브라우저로 열면 현재 월·오늘·원문 링크를 확인할 수 있습니다. 외부 서버는 필요하지 않습니다.
 실사용 지원 범위는 시작 안내를 확인하세요.
 실제 자료를 공개 이슈나 PR에는 첨부하지 마세요.
 AI에 프로젝트를 설명할 때는 [AGENTS.md](AGENTS.md)를 읽도록 요청하세요.
