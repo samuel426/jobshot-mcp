@@ -23,8 +23,13 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const cli = join(root, 'dist/cli.js');
 const codex = resolve(args[1]);
 // Validate before creating fixtures; never resolve an arbitrary PATH installation.
-assert.ok(statSync(codex).isFile(), 'Codex executable must exist');
-assert.ok(statSync(cli).isFile(), 'Run npm run build first');
+try {
+  assert.ok(statSync(codex).isFile());
+  assert.ok(statSync(cli).isFile());
+} catch {
+  console.error('FAIL: Check the current Codex executable path and run npm run build first. App updates can move the executable.');
+  process.exit(1);
+}
 mkdirSync(join(root, 'tmp'), { recursive: true });
 const fixture = mkdtempSync(join(root, 'tmp/codex-check-'));
 const workspace = join(fixture, 'workspace');
@@ -90,7 +95,7 @@ try {
   const inventory = await request('mcpServerStatus/list', { threadId, serverName: 'jobshot_check', detail: 'toolsAndAuthOnly' });
   const server = inventory.data.find(item => item.name === 'jobshot_check');
   assert.equal(server?.runtimeStatus, 'connected');
-  assert.deepEqual(Object.keys(server.tools).sort(), ['posting_import', 'profile_list', 'profile_read']);
+  assert.deepEqual(Object.keys(server.tools).sort(), ['dashboard_build', 'posting_import', 'posting_list', 'posting_track', 'profile_list', 'profile_read']);
   const call = (tool, arguments_) => request('mcpServer/tool/call', { threadId, server: 'jobshot_check', tool, arguments: arguments_ });
   const list = await call('profile_list', {});
   assert.ok(!list.isError);
@@ -126,9 +131,19 @@ try {
   assert.deepEqual(snapshot(record), recordBefore);
   assert.deepEqual(snapshot(profile), profileBefore);
   assert.deepEqual(snapshot(source), sourceBefore);
-  const result = { transport: 'Codex App Server ephemeral session; no model turn', tools: Object.keys(server.tools).sort(), crops: 3, originalPreserved: true, profilePreserved: true, duplicate: true, calendar: null };
+  const postings = await call('posting_list', {});
+  assert.equal(postings.structuredContent.postings[0].id, imported.posting.id);
+  const tracked = await call('posting_track', { id: imported.posting.id, tracked: true });
+  assert.ok(!tracked.isError); assert.equal(tracked.structuredContent.dashboard_updated, true);
+  const built = await call('dashboard_build', {});
+  assert.ok(!built.isError); assert.equal(built.structuredContent.tracked_count, 1);
+  const untracked = await call('posting_track', { id: imported.posting.id, tracked: false });
+  assert.ok(!untracked.isError); assert.equal(untracked.structuredContent.dashboard_updated, true);
+  assert.equal(JSON.parse(readFileSync(record, 'utf8')).status, 'imported');
+  assert.deepEqual(snapshot(profile), profileBefore); assert.deepEqual(snapshot(source), sourceBefore);
+  const result = { transport: 'Codex App Server ephemeral session; no model turn', tools: Object.keys(server.tools).sort(), crops: 3, originalPreserved: true, profilePreserved: true, duplicate: true, trackingAndDashboard: true, calendar: null };
   writeFileSync(join(fixture, 'result.json'), JSON.stringify(result, null, 2) + '\n');
-  console.log(`PASS: Codex discovery, profile read, path rejection, image crops, reimport and original preservation. Evidence: ${relative(root, fixture)}`);
+  console.log(`PASS: Codex discovery, profile read, path rejection, image crops, reimport, tracking/dashboard and original preservation. Evidence: ${relative(root, fixture)}`);
 } catch (error) {
   console.error(`FAIL: ${error.message}`);
   process.exitCode = 1;
