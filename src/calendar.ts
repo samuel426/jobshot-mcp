@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { fail, publicError } from './errors.js';
 import { importSchema, deadlineSchema } from './schemas.js';
-import { components, MAX_TEXT_BYTES, Workspace } from './workspace.js';
+import { components, MAX_TEXT_BYTES, sha256, Workspace } from './workspace.js';
 import { renderDashboard } from './dashboard.js';
 
 export const postingIdSchema = z.string().regex(/^[a-f0-9]{64}$/);
@@ -18,7 +18,7 @@ const recordSchema = z.object({
 type RecordData = z.infer<typeof recordSchema>;
 export type CalendarEntry = { id: string; company: string; role: string; date: string | null; kind: 'date' | 'unknown' | 'rolling'; source_url: string | null };
 
-function records(workspace: Workspace) {
+export function records(workspace: Workspace) {
   const entries = readdirSync(workspace.directory('공고'), { withFileTypes: true }).filter(e => !e.name.startsWith('.'));
   if (entries.length > 1000) fail('POSTING_LIMIT', '공고 항목이 1,000개를 넘었습니다.');
   const ids = new Set<string>();
@@ -35,7 +35,7 @@ function records(workspace: Workspace) {
       if (ids.has(record.id)) throw new Error('Duplicate ID');
     } catch { return fail('INVALID_RECORD', '공고정보.json의 날짜·링크·상태·ID를 확인하세요. 기존 파일은 변경하지 않았습니다.'); }
     ids.add(record.id);
-    return [{ file, record }];
+    return [{ file, record, sha256: sha256(bytes) }];
   });
 }
 
@@ -43,7 +43,7 @@ function summary(record: RecordData): CalendarEntry {
   return { id: record.id, company: record.company, role: record.role, date: record.deadline.kind === 'date' ? record.deadline.date! : null, kind: record.deadline.kind, source_url: record.source_url };
 }
 
-function locked<T>(workspace: Workspace, action: () => T): T {
+export function locked<T>(workspace: Workspace, action: () => T): T {
   workspace.directory('.jobshot');
   const lock = workspace.path('.jobshot/import.lock');
   try { mkdirSync(lock); }
@@ -54,7 +54,7 @@ function locked<T>(workspace: Workspace, action: () => T): T {
   try { return action(); } finally { rmdirSync(workspace.path('.jobshot/import.lock')); }
 }
 
-function checkTarget(workspace: Workspace, target: string) {
+export function checkTarget(workspace: Workspace, target: string) {
   const path = workspace.path(target);
   if (existsSync(path)) {
     const info = lstatSync(path);
@@ -64,7 +64,7 @@ function checkTarget(workspace: Workspace, target: string) {
 }
 
 // Same-directory atomic replacement. No delete-then-write window; old output survives failures.
-function replace(workspace: Workspace, target: string, content: string) {
+export function replace(workspace: Workspace, target: string, content: string) {
   checkTarget(workspace, target);
   const temp = `${target}.pending-${randomUUID()}`;
   try {

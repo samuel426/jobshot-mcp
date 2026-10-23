@@ -95,7 +95,7 @@ try {
   const inventory = await request('mcpServerStatus/list', { threadId, serverName: 'jobshot_check', detail: 'toolsAndAuthOnly' });
   const server = inventory.data.find(item => item.name === 'jobshot_check');
   assert.equal(server?.runtimeStatus, 'connected');
-  assert.deepEqual(Object.keys(server.tools).sort(), ['dashboard_build', 'posting_import', 'posting_list', 'posting_track', 'profile_list', 'profile_read']);
+  assert.deepEqual(Object.keys(server.tools).sort(), ['dashboard_build', 'posting_get', 'posting_import', 'posting_list', 'posting_save_analysis', 'posting_track', 'profile_list', 'profile_read']);
   const call = (tool, arguments_) => request('mcpServer/tool/call', { threadId, server: 'jobshot_check', tool, arguments: arguments_ });
   const list = await call('profile_list', {});
   assert.ok(!list.isError);
@@ -140,10 +140,16 @@ try {
   const untracked = await call('posting_track', { id: imported.posting.id, tracked: false });
   assert.ok(!untracked.isError); assert.equal(untracked.structuredContent.dashboard_updated, true);
   assert.equal(JSON.parse(readFileSync(record, 'utf8')).status, 'imported');
+  const fetched = await call('posting_get', { id: imported.posting.id });
+  assert.ok(!fetched.isError);
+  const { analysisInput } = await import('../tests/analysis-helpers.mjs');
+  const analysis = await call('posting_save_analysis', analysisInput(fetched.structuredContent, read.structuredContent));
+  assert.ok(!analysis.isError); assert.equal(analysis.structuredContent.score, 100);
+  assert.equal(analysis.structuredContent.status, 'analyzed');
   assert.deepEqual(snapshot(profile), profileBefore); assert.deepEqual(snapshot(source), sourceBefore);
-  const result = { transport: 'Codex App Server ephemeral session; no model turn', tools: Object.keys(server.tools).sort(), crops: 3, originalPreserved: true, profilePreserved: true, duplicate: true, trackingAndDashboard: true, calendar: null };
+  const result = { transport: 'Codex App Server ephemeral session; no model turn', tools: Object.keys(server.tools).sort(), crops: 3, originalPreserved: true, profilePreserved: true, duplicate: true, trackingAndDashboard: true, analysisSaved: true, calendar: null };
   writeFileSync(join(fixture, 'result.json'), JSON.stringify(result, null, 2) + '\n');
-  console.log(`PASS: Codex discovery, profile read, path rejection, image crops, reimport, tracking/dashboard and original preservation. Evidence: ${relative(root, fixture)}`);
+  console.log(`PASS: Codex discovery, profile read, path rejection, image crops, reimport, tracking/dashboard, analysis save and original preservation. Evidence: ${relative(root, fixture)}`);
 } catch (error) {
   console.error(`FAIL: ${error.message}`);
   process.exitCode = 1;

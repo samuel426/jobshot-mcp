@@ -8,6 +8,7 @@ import sharp from 'sharp';
 import { Client } from '@modelcontextprotocol/client';
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
 import { cli, fixture, image, input } from './helpers.mjs';
+import { analysisInput } from './analysis-helpers.mjs';
 
 test('real stdio client discovers tools, reads selected material, imports and receives errors', { timeout: 20000 }, async t => {
   const { root } = fixture(t);
@@ -21,7 +22,7 @@ test('real stdio client discovers tools, reads selected material, imports and re
   try {
     await client.connect(transport);
     const { tools } = await client.listTools();
-    assert.deepEqual(tools.map(tool => tool.name).sort(), ['dashboard_build', 'posting_import', 'posting_list', 'posting_track', 'profile_list', 'profile_read']);
+    assert.deepEqual(tools.map(tool => tool.name).sort(), ['dashboard_build', 'posting_get', 'posting_import', 'posting_list', 'posting_save_analysis', 'posting_track', 'profile_list', 'profile_read']);
     assert.equal(tools.find(tool => tool.name === 'profile_read').annotations.readOnlyHint, true);
     assert.equal(tools.find(tool => tool.name === 'posting_import').annotations.readOnlyHint, false);
     const list = await client.callTool({ name: 'profile_list', arguments: {} });
@@ -42,6 +43,13 @@ test('real stdio client discovers tools, reads selected material, imports and re
     const trackedAgain = await client.callTool({ name: 'posting_import', arguments: input() });
     assert.equal(trackedAgain.structuredContent.duplicate, true);
     assert.equal(trackedAgain.structuredContent.posting.status, 'tracked');
+    const fetched = await client.callTool({ name: 'posting_get', arguments: { id: imported.structuredContent.posting.id } });
+    assert.ok(!fetched.isError);
+    const analysis = analysisInput(fetched.structuredContent, profile.structuredContent);
+    const saved = await client.callTool({ name: 'posting_save_analysis', arguments: analysis });
+    assert.ok(!saved.isError); assert.equal(saved.structuredContent.score, 100); assert.equal(saved.structuredContent.status, 'tracked');
+    const stale = await client.callTool({ name: 'posting_save_analysis', arguments: analysis });
+    assert.equal(stale.isError, true); assert.equal(stale.structuredContent.error.code, 'STALE_POSTING');
     const long = await sharp({ create: { width: 32, height: 3500, channels: 3, background: 'white' } }).png().toBuffer();
     writeFileSync(join(root, 'inbox', 'long.png'), long);
     const split = await client.callTool({ name: 'posting_import', arguments: input({ image_path: 'long.png' }) });
@@ -86,7 +94,7 @@ test('legacy 2025 MCP initialization and tools/list work over plain JSON-RPC', {
     assert.equal(initialized.result.protocolVersion, '2025-11-25');
     child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
     const list = await request(2, 'tools/list', {});
-    assert.equal(list.result.tools.length, 6);
+    assert.equal(list.result.tools.length, 8);
     assert.equal(stderr, '');
   } finally {
     lines.close();
