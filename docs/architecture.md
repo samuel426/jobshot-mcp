@@ -1,7 +1,7 @@
 # 구조와 데이터 설계
 
-상태: 3단계 직무 적합도·근거 저장 구현. `profile_list`, `profile_read`, `posting_import`, `posting_list`, `posting_track`, `dashboard_build`, `posting_get`, `posting_save_analysis`를 제공한다.
-AI 판단은 클라이언트가 수행하고 MCP는 평가 구조·자료 버전·인용·배점을 검증한다. 서류 초안·Google 연동은 후속 설계다. 사용법은 [시작하기](getting-started.md)를 따른다.
+상태: 3단계 직무 적합도·지원서류 저장 구현. `profile_list`, `profile_read`, `posting_import`, `posting_list`, `posting_track`, `dashboard_build`, `posting_get`, `posting_save_analysis`, `application_save`를 제공한다.
+AI 판단과 문장 작성은 클라이언트가 수행하고 MCP는 평가 구조·자료 버전·인용·배점을 검증한다. Google 연동은 후속 설계다. 사용법은 [시작하기](getting-started.md)를 따른다.
 
 ## 역할 분리
 
@@ -123,6 +123,10 @@ HTML 출력 경로를 먼저 검사하고 상태를 저장한다. 그 이후 HTM
 세부 계약은 [직무 적합도 저장](job-fit.md)을 따른다. 공고 JSON의 원본 바이트 해시를 동시 변경 감지에 사용하고, 이미지 원본과 선택한 개인 자료의 해시를 확인한다. 기록·이미지·자료가 바뀌면 저장을 거부한다. 자료 인용의 존재를 확인하되 공고 이미지 문구와 해석의 의미·사실성은 클라이언트와 사용자가 확인한다.
 
 공고정보.json을 원자적으로 교체한 뒤 분석.md를 생성한다. Markdown만 실패하면 report_updated:false로 JSON 저장 완료를 알린다. 두 파일은 하나의 트랜잭션이 아니며 강제 종료 시 JSON을 기준으로 복구한다. 재분석은 최신 결과로 교체하며 서류 버전 보존 기능과는 구분한다. tracked 공고의 분석은 상태를 유지하고 tracking_previous_status를 analyzed로 갱신한다. 달력 HTML·Google·개인 원본·공고 사진은 변경하지 않는다.
+
+## 지원서류 버전 저장
+
+지원서류의 상세 계약은 [서류 초안·평가 저장](applications.md)을 따른다. 공고·개인 자료의 최신 해시와 인용을 검사하고 `지원서류/<UUID>/`에 JSON과 Markdown을 함께 게시한다. 기존 버전·공고 상태는 변경하지 않는다. 미완성 `.pending-*` 폴더는 버전이 아니며 강제 종료 시 자동 복구하지 않는다. 자소서 평가는 요청한 경우만 포함하고 이력서에는 자소서 배점을 적용하지 않는다.
 
 ## Google 연동 경계
 
