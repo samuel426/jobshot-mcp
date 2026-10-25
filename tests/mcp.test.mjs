@@ -9,6 +9,7 @@ import { Client } from '@modelcontextprotocol/client';
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
 import { cli, fixture, image, input } from './helpers.mjs';
 import { analysisInput } from './analysis-helpers.mjs';
+import { applicationInput } from './application-helpers.mjs';
 
 test('real stdio client discovers tools, reads selected material, imports and receives errors', { timeout: 20000 }, async t => {
   const { root } = fixture(t);
@@ -22,7 +23,7 @@ test('real stdio client discovers tools, reads selected material, imports and re
   try {
     await client.connect(transport);
     const { tools } = await client.listTools();
-    assert.deepEqual(tools.map(tool => tool.name).sort(), ['dashboard_build', 'posting_get', 'posting_import', 'posting_list', 'posting_save_analysis', 'posting_track', 'profile_list', 'profile_read']);
+    assert.deepEqual(tools.map(tool => tool.name).sort(), ['application_save', 'dashboard_build', 'posting_get', 'posting_import', 'posting_list', 'posting_save_analysis', 'posting_track', 'profile_list', 'profile_read']);
     assert.equal(tools.find(tool => tool.name === 'profile_read').annotations.readOnlyHint, true);
     assert.equal(tools.find(tool => tool.name === 'posting_import').annotations.readOnlyHint, false);
     const list = await client.callTool({ name: 'profile_list', arguments: {} });
@@ -50,6 +51,16 @@ test('real stdio client discovers tools, reads selected material, imports and re
     assert.ok(!saved.isError); assert.equal(saved.structuredContent.score, 100); assert.equal(saved.structuredContent.status, 'tracked');
     const stale = await client.callTool({ name: 'posting_save_analysis', arguments: analysis });
     assert.equal(stale.isError, true); assert.equal(stale.structuredContent.error.code, 'STALE_POSTING');
+    const latest = await client.callTool({ name: 'posting_get', arguments: { id: analysis.id } });
+    const draft = applicationInput(latest.structuredContent, profile.structuredContent, true);
+    const application = await client.callTool({ name: 'application_save', arguments: draft });
+    assert.ok(!application.isError); assert.equal(application.structuredContent.sections[0].score, 100);
+    const firstVersion = application.structuredContent.version;
+    const revised = await client.callTool({ name: 'application_save', arguments: draft });
+    assert.ok(!revised.isError); assert.notEqual(revised.structuredContent.version, firstVersion);
+    draft.sections[0].claims[0].evidence[0].quote = '존재하지 않는 수치';
+    const badDraft = await client.callTool({ name: 'application_save', arguments: draft });
+    assert.equal(badDraft.isError, true); assert.equal(badDraft.structuredContent.error.code, 'INVALID_EVIDENCE');
     const long = await sharp({ create: { width: 32, height: 3500, channels: 3, background: 'white' } }).png().toBuffer();
     writeFileSync(join(root, 'inbox', 'long.png'), long);
     const split = await client.callTool({ name: 'posting_import', arguments: input({ image_path: 'long.png' }) });
@@ -94,7 +105,7 @@ test('legacy 2025 MCP initialization and tools/list work over plain JSON-RPC', {
     assert.equal(initialized.result.protocolVersion, '2025-11-25');
     child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
     const list = await request(2, 'tools/list', {});
-    assert.equal(list.result.tools.length, 8);
+    assert.equal(list.result.tools.length, 9);
     assert.equal(stderr, '');
   } finally {
     lines.close();
