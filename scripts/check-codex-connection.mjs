@@ -148,10 +148,16 @@ try {
   assert.equal(analysis.structuredContent.status, 'analyzed');
   const latest = await call('posting_get', { id: imported.posting.id });
   assert.ok(!latest.isError);
-  const { applicationInput } = await import('../tests/application-helpers.mjs');
-  const application = await call('application_save', applicationInput(latest.structuredContent, read.structuredContent, true));
+  const { applicationInput, resumeEvaluation } = await import('../tests/application-helpers.mjs');
+  const draft = applicationInput(latest.structuredContent, read.structuredContent);
+  const application = await call('application_save', draft);
   assert.ok(!application.isError); assert.equal(application.structuredContent.sections[0].score, 100);
   assert.equal(application.structuredContent.saved, true);
+  assert.equal(application.structuredContent.sections[0].evaluation.criteria.clarity.deducted, 0);
+  draft.kind = 'resume'; draft.sections[0].evaluation = resumeEvaluation(draft.sections[0].answer);
+  const resume = await call('application_save', draft);
+  assert.ok(!resume.isError); assert.equal(resume.structuredContent.sections[0].score, null);
+  assert.equal(resume.structuredContent.sections[0].evaluation.mode, 'qualitative');
   assert.deepEqual(snapshot(profile), profileBefore); assert.deepEqual(snapshot(source), sourceBefore);
   const result = { transport: 'Codex App Server ephemeral session; no model turn', tools: Object.keys(server.tools).sort(), crops: 3, originalPreserved: true, profilePreserved: true, duplicate: true, trackingAndDashboard: true, analysisSaved: true, applicationSaved: true, calendar: null };
   writeFileSync(join(fixture, 'result.json'), JSON.stringify(result, null, 2) + '\n');

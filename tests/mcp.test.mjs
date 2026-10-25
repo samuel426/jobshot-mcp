@@ -9,7 +9,7 @@ import { Client } from '@modelcontextprotocol/client';
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
 import { cli, fixture, image, input } from './helpers.mjs';
 import { analysisInput } from './analysis-helpers.mjs';
-import { applicationInput } from './application-helpers.mjs';
+import { applicationInput, resumeEvaluation } from './application-helpers.mjs';
 
 test('real stdio client discovers tools, reads selected material, imports and receives errors', { timeout: 20000 }, async t => {
   const { root } = fixture(t);
@@ -52,9 +52,17 @@ test('real stdio client discovers tools, reads selected material, imports and re
     const stale = await client.callTool({ name: 'posting_save_analysis', arguments: analysis });
     assert.equal(stale.isError, true); assert.equal(stale.structuredContent.error.code, 'STALE_POSTING');
     const latest = await client.callTool({ name: 'posting_get', arguments: { id: analysis.id } });
-    const draft = applicationInput(latest.structuredContent, profile.structuredContent, true);
+    const draft = applicationInput(latest.structuredContent, profile.structuredContent);
     const application = await client.callTool({ name: 'application_save', arguments: draft });
     assert.ok(!application.isError); assert.equal(application.structuredContent.sections[0].score, 100);
+    assert.equal(application.structuredContent.sections[0].evaluation.criteria.clarity.deducted, 0);
+    const missingEvaluation = structuredClone(draft); missingEvaluation.sections[0].evaluation = null;
+    assert.equal((await client.callTool({ name: 'application_save', arguments: missingEvaluation })).isError, true);
+    const resume = structuredClone(draft); resume.kind = 'resume';
+    resume.sections[0].evaluation = resumeEvaluation(resume.sections[0].answer);
+    const reviewed = await client.callTool({ name: 'application_save', arguments: resume });
+    assert.ok(!reviewed.isError); assert.equal(reviewed.structuredContent.sections[0].evaluation.mode, 'qualitative');
+    assert.equal(reviewed.structuredContent.sections[0].score, null);
     const firstVersion = application.structuredContent.version;
     const revised = await client.callTool({ name: 'application_save', arguments: draft });
     assert.ok(!revised.isError); assert.notEqual(revised.structuredContent.version, firstVersion);

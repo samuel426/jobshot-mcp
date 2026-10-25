@@ -14,13 +14,21 @@ const citation = z.object({ source_index: z.number().int().min(0).max(19), quote
 const postingEvidence = z.object({ quote: text, location: text }).strict();
 const criterion = (maximum: number) => z.object({
   status: z.enum(['assessed', 'unknown']), score: z.number().min(0).max(maximum).nullable(),
-  reason: text, answer_quotes: z.array(text).min(1).max(10),
+  reason: text.describe('이 점수를 준 구체적인 이유와 충족한 부분'),
+  deduction_reason: text.describe('감점한 부분과 이유. 만점이면 감점 없음, 미평가면 유보 이유'),
+  answer_quotes: z.array(text).min(1).max(10),
 }).strict().superRefine((item, ctx) => {
   if ((item.status === 'assessed') !== (item.score !== null)) ctx.addIssue({ code: 'custom', message: '평가한 항목에만 점수를 입력하세요.' });
 });
 const evaluation = z.object({
   rubric_version: z.literal('0.1'),
   criteria: z.object({ answers_question: criterion(25), job_relevance: criterion(25), specific_evidence: criterion(30), clarity: criterion(15), format_compliance: criterion(5) }).strict(),
+  recruiter_view: text, practitioner_view: text, improvement_priorities: z.array(text).min(1).max(5),
+}).strict();
+const reviewPoint = z.object({ comment: text, answer_quotes: z.array(text).min(1).max(10) }).strict();
+const resumeReview = z.object({
+  type: z.literal('resume_qualitative'),
+  strengths: z.array(reviewPoint).max(10), evidence_gaps: z.array(reviewPoint).max(10),
   recruiter_view: text, practitioner_view: text, improvement_priorities: z.array(text).min(1).max(5),
 }).strict();
 const lengthRule = z.object({
@@ -45,7 +53,7 @@ export const applicationSchema = z.object({
       evidence: z.array(citation).max(20), note: text,
     }).strict()).max(50),
     missing_information: z.array(text).max(20),
-    evaluation: evaluation.nullable().describe('평가 요청이 없으면 null. 이력서는 문항별 자소서 배점을 적용하지 않고 null로 저장합니다.'),
+    evaluation: z.union([evaluation, resumeReview]).describe('항상 포함합니다. 자소서는 v0.1 항목별 점수·근거·감점 이유, 이력서는 resume_qualitative 강점·부족한 근거·개선안이며 숫자 점수는 입력하지 않습니다.'),
   }).strict()).min(1).max(20),
 }).strict();
 export type ApplicationInput = z.input<typeof applicationSchema>;
@@ -69,7 +77,7 @@ function quote(value: string) {
 
 export function applicationSave(workspace: Workspace, raw: ApplicationInput, write = writeFileSync) {
   const parsed = applicationSchema.safeParse(raw);
-  if (!parsed.success) fail('INVALID_APPLICATION', '서류 종류·문항·본문·분량 기준·자료·평가 배점을 확인하세요. 기존 버전은 보존했습니다.');
+  if (!parsed.success) fail('INVALID_APPLICATION', '모든 문항/항목에 평가가 필요합니다. 자소서는 점수·근거·감점 이유, 이력서는 강점·부족한 근거·개선안을 포함하고 서류·분량·자료·배점을 확인하세요. 기존 버전은 보존했습니다.');
   const input = parsed.data;
   return locked(workspace, () => {
     const item = findPosting(workspace, input.id);
@@ -99,9 +107,9 @@ export function applicationSave(workspace: Workspace, raw: ApplicationInput, wri
       const needsConfirmation = section.claims.some(claim => claim.status !== 'supported') || section.missing_information.length > 0;
       const length = countAnswer(section.answer, section.length_rule);
       const e = section.evaluation;
-      let scored = null;
-      if (e) {
-        if (input.kind !== 'essay') fail('INVALID_APPLICATION', '문항별 100점 기준은 자소서에만 적용합니다. 이력서 평가는 null로 두세요.');
+      let scored;
+      if ('criteria' in e) {
+        if (input.kind !== 'essay') fail('INVALID_APPLICATION', '이력서는 숫자 점수 대신 resume_qualitative 평가를 포함하세요.');
         for (const c of Object.values(e.criteria)) for (const excerpt of c.answer_quotes) {
           if (!section.answer.includes(excerpt)) fail('INVALID_EVIDENCE', '평가 근거 문장이 해당 문항의 답변에 없습니다.');
         }
@@ -111,8 +119,20 @@ export function applicationSave(workspace: Workspace, raw: ApplicationInput, wri
         const noEvidence = !section.claims.some(claim => claim.status === 'supported');
         const withheld = needsConfirmation || noEvidence || Object.values(e.criteria).some(c => c.status === 'unknown');
         const total = withheld ? null : Math.round(Object.values(e.criteria).reduce((sum, c) => sum + c.score!, 0) * 10) / 10;
-        scored = { ...e, score: total, withheld, evaluated_at: savedAt,
+        const criteria = Object.fromEntries(Object.entries(e.criteria).map(([key, c]) => {
+          const maximum = essayWeights[key as keyof typeof essayWeights];
+          return [key, { ...c, maximum, deducted: c.score === null ? null : Math.round((maximum - c.score) * 10) / 10 }];
+        }));
+        scored = { ...e, mode: 'scored' as const, criteria, score: total, withheld, evaluated_at: savedAt,
           withholding_reasons: [...(needsConfirmation ? ['확인할 사실 또는 누락 정보'] : []), ...(noEvidence ? ['개인 자료에 연결된 경험 근거 없음'] : []), ...(Object.values(e.criteria).some(c => c.status === 'unknown') ? ['미평가 항목'] : [])] };
+      } else {
+        if (input.kind !== 'resume') fail('INVALID_APPLICATION', '자소서는 v0.1 문항별 점수·근거·감점 이유를 포함하세요.');
+        for (const point of [...e.strengths, ...e.evidence_gaps]) for (const excerpt of point.answer_quotes) {
+          if (!section.answer.includes(excerpt)) fail('INVALID_EVIDENCE', '이력서 평가의 근거 문장이 해당 항목의 본문에 없습니다.');
+        }
+        scored = { ...e, mode: 'qualitative' as const, score: null, withheld: true, evaluated_at: savedAt,
+          withholding_reasons: ['이력서 전용 수치 평가 기준 미정: 강점·부족한 근거·개선안으로 평가'],
+          needs_confirmation: needsConfirmation || !section.claims.some(claim => claim.status === 'supported') };
       }
       return { ...section, prompt_sha256: sha256(JSON.stringify({ prompt: section.prompt, length_rule: section.length_rule })), answer_sha256: sha256(section.answer), length,
         status: needsConfirmation ? 'needs_confirmation' : 'draft', evaluation: scored };
@@ -132,11 +152,19 @@ export function applicationSave(workspace: Workspace, raw: ApplicationInput, wri
       for (const c of section.claims) lines.push(quote(`${c.status}: ${c.text}\n${c.note}`), ...c.evidence.map(e => quote(`자료 ${e.source_index + 1}: ${e.quote}`)));
       lines.push(...section.missing_information.map(quote));
       const e = section.evaluation;
-      if (e) {
+      if (e.mode === 'scored') {
         lines.push('', '### 문항별 참고 평가 v0.1', e.withheld ? `점수 유보: ${e.withholding_reasons.join(', ')}` : `${e.score}/100`);
-        for (const [key, c] of Object.entries(e.criteria)) lines.push(`${labels[key as keyof typeof labels]}: ${c.score ?? '유보'}/${essayWeights[key as keyof typeof essayWeights]}`, quote(c.reason), ...c.answer_quotes.map(quote));
-        lines.push('인사담당자 관점의 전달력', quote(e.recruiter_view), '실무자 관점의 구체성', quote(e.practitioner_view), '개선 우선순위', ...e.improvement_priorities.map((p, i) => quote(`${i + 1}. ${p}`)));
-      } else lines.push('', '문항별 평가는 요청하지 않아 저장하지 않았습니다.');
+        for (const [key, c] of Object.entries(e.criteria)) lines.push(`${labels[key as keyof typeof labels]}: ${c.score ?? '유보'}/${c.maximum} · 감점 ${c.deducted ?? '유보'}`, '점수 근거', quote(c.reason), '감점·유보 이유', quote(c.deduction_reason), '답변의 근거 문장', ...c.answer_quotes.map(quote));
+      } else {
+        lines.push('', '### 이력서 항목별 평가', `숫자 점수 유보: ${e.withholding_reasons.join(', ')}`, '강점');
+        for (const point of e.strengths) lines.push(quote(point.comment), ...point.answer_quotes.map(quote));
+        if (!e.strengths.length) lines.push('현재 자료에서 확인한 강점 없음');
+        lines.push('부족한 근거');
+        for (const point of e.evidence_gaps) lines.push(quote(point.comment), ...point.answer_quotes.map(quote));
+        if (!e.evidence_gaps.length) lines.push('평가자가 지적한 부족 근거 없음. 사실 검증 완료를 뜻하지 않습니다.');
+        if (e.needs_confirmation) lines.push('확인 필요: 개인 자료에 연결된 경험 근거와 미확인 사실을 확인하세요.');
+      }
+      lines.push('인사담당자 관점의 전달력', quote(e.recruiter_view), '실무자 관점의 구체성', quote(e.practitioner_view), '개선 우선순위', ...e.improvement_priorities.map((p, i) => quote(`${i + 1}. ${p}`)));
       lines.push(`문항·분량 기준 SHA-256: ${section.prompt_sha256}`, `본문 SHA-256: ${section.answer_sha256}`);
     }
     lines.push('', '## 사용한 자료 버전', `공고 기록 SHA-256: ${input.posting_sha256}`, `공고 원본 SHA-256: ${item.image_sha256}`, ...sources.map((source, i) => quote(`${i + 1}. ${source.path} · SHA-256: ${source.sha256}`)));
@@ -162,6 +190,6 @@ export function applicationSave(workspace: Workspace, raw: ApplicationInput, wri
       }
     }
     return { id: input.id, version, path: `${destination}/초안.md`, record_path: `${destination}/서류.json`, saved: true,
-      sections: sections.map(s => ({ key: s.key, status: s.status, length: s.length, score: s.evaluation?.score ?? null, evaluated: s.evaluation !== null, withheld: s.evaluation?.withheld ?? null })), notice };
+      sections: sections.map(s => ({ key: s.key, status: s.status, length: s.length, score: s.evaluation.score, evaluated: true, withheld: s.evaluation.withheld, evaluation: s.evaluation })), notice };
   });
 }

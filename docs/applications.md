@@ -9,15 +9,15 @@ AI 클라이언트가 공고와 사용자가 선택한 최신 자료로 문장�
 ```text
 이 공고에 맞춰 선택한 가상경험.md를 근거로 자소서 초안을 저장해줘.
 문항은 “직무 관련 경험을 설명하세요”, 500자 이내, 공백 포함이야.
-지금은 점수 평가나 달력 등록은 하지 마.
+항목별 점수와 그 이유도 알려줘. 달력 등록은 하지 마.
 ```
 
 1. `posting_list`와 `posting_get`으로 대상 공고·기록 해시를 확인하고 원본 이미지를 읽는다.
 2. `profile_list`에서 목록을 확인하고 사용자가 선택한 자료만 `profile_read`로 다시 읽는다.
 3. 요청한 문항/이력서 항목, 분량·공백 포함 여부·지원 플랫폼을 확인한다. 알 수 없는 기준은 unknown/null로 남긴다.
 4. 경험·역할·성과·수치를 원본에 연결하고 확인되지 않은 주장과 충돌을 표시한다. 없는 경험을 만들지 않는다.
-5. 기본은 초안만 저장한다. 사용자가 문항별 평가도 요청했을 때 자소서 평가를 포함한다.
-6. `application_save`의 성공 응답에 있는 Markdown 경로와 확인할 사항을 안내한다. 저장만으로 달력 상태가 바뀌지 않는다.
+5. 평가를 항상 함께 저장한다. 자소서는 문항별 배점·점수·점수 근거·감점 이유·본문 근거 문장·개선안을, 이력서는 숫자 점수 없이 항목별 강점·부족한 근거·개선안을 작성한다.
+6. `application_save`의 성공 응답에 있는 항목별 평가를 사용자에게 보여주고 Markdown 경로와 확인할 사항을 안내한다. 자소서는 어떤 부분으로 점수를 받거나 감점됐는지 설명하고 유보한 점수는 이유를 알린다. 저장만으로 달력 상태가 바뀌지 않는다.
 
 자료가 없으면 맞춤 초안을 저장하지 않는다. 필요한 자료 안내와 공고 정리를 먼저 한다.
 기존 초안을 평가하거나 수정할 때도 자료를 다시 읽고 본문·평가를 함께 새 버전으로 저장한다.
@@ -43,7 +43,7 @@ AI 클라이언트가 공고와 사용자가 선택한 최신 자료로 문장�
 | posting_evidence | `{quote, location}` 목록. 실제 읽은 공고 문구·이미지 위치 |
 | claims | 본문에 포함된 경험·역할·성과 등 사실 주장과 개인 자료 근거 |
 | missing_information | 추가 확인이 필요한 정보 목록 |
-| evaluation | 요청하지 않았으면 null. 자소서 문항별 평가 객체 |
+| evaluation | 항상 필수. 자소서 문항별 수치 평가 또는 이력서 항목별 정성 평가 객체. null 불가 |
 
 `length_rule.minimum/maximum`은 숫자 또는 null, `spaces`는 included/excluded/unknown,
 `platform`은 확인한 플랫폼 이름 또는 null이다. 제한이 없다고 확인했거나 아직 모르는 값은 null로 두며,
@@ -61,7 +61,7 @@ claims의 각 항목은 `{text, status, evidence, note}`다.
 
 ## 평가 계약
 
-평가 요청이 있으면 `rubric_version:"0.1"`, `criteria`, `recruiter_view`, `practitioner_view`,
+자소서는 항상 `rubric_version:"0.1"`, `criteria`, `recruiter_view`, `practitioner_view`,
 `improvement_priorities`를 전달한다. [평가 기준](evaluation.md)의 자소서 배점을 그대로 사용한다.
 
 | criteria 키 | 배점 |
@@ -72,14 +72,26 @@ claims의 각 항목은 `{text, status, evidence, note}`다.
 | clarity | 15 |
 | format_compliance | 5 |
 
-각 항목은 `{status, score, reason, answer_quotes}`다. status는 assessed/unknown이며,
+각 항목은 `{status, score, reason, deduction_reason, answer_quotes}`다. status는 assessed/unknown이며,
 assessed만 0~배점의 점수를 갖고 unknown은 null이다. answer_quotes는 해당 문항 답변의 정확한 근거 문장 목록이다.
+reason에는 점수를 준 구체적 이유와 충족한 부분, deduction_reason에는 감점한 부분과 이유를 적는다.
+만점이면 감점 없음, 미평가면 유보 이유를 적는다. 서버는 maximum(배점)과 deducted(배점−점수)를 계산한다. 미평가 항목의 deducted는 null이다.
 문항마다 서버가 합계를 계산하고 인사담당자 관점의 전달력·실무자 관점의 구체성·개선 우선순위를 함께 기록한다.
+도구 응답에도 전체 evaluation을 포함하므로 저장 경로·합계만 전달하지 않고 항목별 이유를 보여준다.
 실제 기업 내부 평가 기준이나 합격 확률로 표현하지 않는다.
 
 - 확인할 주장·충돌·누락 정보, 미평가 항목, 개인 자료에 연결된 경험 근거 부재 중 하나라도 있으면 해당 문항의 총점은 null이다.
 - 분량 기준이 미확인이면 format_compliance는 unknown/null이다. 확인된 분량을 벗어나면 형식 점수는 0 또는 유보로 둔다.
-- 이력서에는 자소서 문항 배점을 적용하지 않는다. resume의 evaluation은 null이어야 한다.
+- 이력서에는 자소서 문항 배점을 적용하지 않는다. 아래 정성 평가를 항상 포함한다.
+
+### 이력서 항목별 평가
+
+resume의 evaluation은 `{type:"resume_qualitative", strengths, evidence_gaps, recruiter_view, practitioner_view, improvement_priorities}`다.
+strengths(강점)와 evidence_gaps(부족한 근거)는 각각 `{comment, answer_quotes}` 목록이며 인용은 해당 항목 본문에 존재해야 한다.
+확인할 강점·부족한 근거가 없으면 빈 목록으로 표시할 수 있다. improvement_priorities는 한 개 이상의 구체적인 개선안이다.
+서버는 평가 시각과 `mode:"qualitative"`, `score:null`, `withheld:true` 및 숫자 점수 유보 이유를 기록한다.
+자소서는 `mode:"scored"`로 구분한다. 이력서에 score를 입력하거나 자소서 평가를 넣으면 거부한다.
+기존 평가 없는 버전은 보존하지만 새 저장은 모든 문항/항목의 평가가 필수다.
 
 ## 글자 수
 
