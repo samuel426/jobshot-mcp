@@ -31,13 +31,13 @@ export function folderPart(value: string): string {
 export class Workspace {
   readonly root: string;
 
-  constructor(root: string) {
+  constructor(root: string, initialize = true) {
     if (!isAbsolute(root)) fail('INVALID_WORKSPACE', '--workspace에는 기존 폴더의 절대 경로가 필요합니다.');
     const info = lstatSync(root);
     if (!info.isDirectory() || info.isSymbolicLink()) fail('INVALID_WORKSPACE', '작업 폴더는 실제 디렉터리여야 합니다.');
     this.root = realpathSync(root);
     // Existing personal material is never rewritten or migrated.
-    for (const name of ['개인 자료', '공고', 'inbox', '.jobshot']) this.directory(name, true);
+    if (initialize) for (const name of ['개인 자료', '공고', 'inbox', '.jobshot']) this.directory(name, true);
   }
 
   path(relativePath: string): string {
