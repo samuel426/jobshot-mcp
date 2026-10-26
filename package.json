@@ -1,6 +1,6 @@
 {
   "name": "jobshot-mcp",
-  "version": "0.3.0-dev.1",
+  "version": "0.3.0-dev.3",
   "private": true,
   "description": "Local job-posting intake and personal-material tools for JobShot",
   "type": "module",
