@@ -48,7 +48,33 @@ test('PKCE uses only dedicated scope, random state and loopback; malformed callb
     assert.equal(await session.code, 'synthetic-code');
   } finally { session.close(); }
   const timeout = await startAuthorization(credentials.installed.client_id, 20);
-  try { await assert.rejects(timeout.code, /timeout/); } finally { timeout.close(); }
+  try { await assert.rejects(timeout.code, code('GOOGLE_AUTH_TIMEOUT')); } finally { timeout.close(); }
+});
+
+test('authorization timeout preserves the connection, closes the callback and allows a fresh retry', async t => {
+  const f = fixtureAuth(t); await f.connect();
+  const before = readFileSync(join(f.root, 'auth/connection.bin'));
+  const callsBefore = f.calls.length;
+  let expired;
+  const shortAuthorization = async clientId => {
+    expired = await startAuthorization(clientId, 30);
+    return expired;
+  };
+  await assert.rejects(connectGoogle(f.store, credentials, () => {}, f.send, shortAuthorization), error => {
+    assert.equal(error.code, 'GOOGLE_AUTH_TIMEOUT');
+    assert.match(error.message, /--connect/);
+    assert.match(error.message, /새 주소/);
+    assert.ok(!error.message.includes('synthetic'));
+    return true;
+  });
+  assert.deepEqual(readFileSync(join(f.root, 'auth/connection.bin')), before);
+  assert.equal(f.calls.length, callsBefore);
+  assert.equal(existsSync(f.store.files.path('.jobshot/import.lock')), false);
+  const lateCallback = new URL(expired.redirectUri);
+  lateCallback.search = new URLSearchParams({ state: new URL(expired.url).searchParams.get('state'), code: 'synthetic-late-code' }).toString();
+  await assert.rejects(fetch(lateCallback));
+  const result = await f.connect();
+  assert.equal(result.connected, true); assert.equal(result.created, false);
 });
 
 test('connect creates a dedicated calendar after consent, stores protected credentials and reconnect reuses target', async t => {

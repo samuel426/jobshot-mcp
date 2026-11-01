@@ -1,7 +1,8 @@
 # Google 캘린더 연결과 선택 전송
 
 4단계 개발 버전이다. Windows용 계정 연결 CLI, 로컬 전송 미리보기와 단방향 수동 등록·갱신을 구현했다.
-가상 Google 응답으로 검증했으며 실제 Google 계정의 동의·등록·갱신·권한 해제는 아직 미검증이다.
+2026-10-31 Windows 실제 계정 동의·전용 캘린더 생성과 가상 이벤트의 등록·중복 방지·갱신·충돌 처리를 확인했다.
+실제 권한 철회와 공개 배포 검증은 남아 있다. 검증 경로는 [실사용 기록](client-validation.md)을 따른다.
 기존 로컬 달력 등록이나 공고 분석만으로 Google에 전송하지 않는다.
 
 ## 첫 버전의 선택
@@ -22,7 +23,7 @@ Google에 보내는 사용자 내용은 회사·직무·확인된 마감 날짜�
 현재는 각 사용자가 본인 Google Cloud 프로젝트의 Desktop OAuth 클라이언트를 준비하는 개발용 흐름이다.
 공용 개발자 서버나 공용 OAuth 자격 증명을 배포하지 않는다.
 
-1. [Google Cloud Console](https://console.cloud.google.com/)에서 사용할 프로젝트를 만들거나 선택하고 Google Calendar API를 활성화한다.
+1. [Google Cloud Console](https://console.cloud.google.com/)에서 사용할 프로젝트를 만들거나 선택하고 **Google Calendar API** (`calendar-json.googleapis.com`)를 활성화한다. 이 구현은 Calendar REST API를 사용하므로 CalDAV API 활성화만으로 준비가 끝나지 않는다.
 2. Google Auth Platform의 OAuth 동의 화면에 앱 정보를 설정한다. External/Testing을 사용한다면 실제 연결할 Google 계정을 테스트 사용자에 넣는다.
 3. 위 `calendar.app.created` 권한을 확인한다. 전체 캘린더 권한이나 Google Drive 권한을 추가하지 않는다.
 4. OAuth 클라이언트 유형을 **Desktop app**으로 만들어 JSON을 내려받는다. 서비스 계정 또는 Web application JSON은 받지 않는다.
@@ -42,10 +43,15 @@ npm run build
 node dist/google-cli.js --workspace "C:\JobShot" --connect "C:\JobShotAuth\client_secret_jobshot.json"
 ```
 
-출력된 Google 인증 주소를 시스템 브라우저에서 열어 계정을 선택하고 동의한다. 대기 시간은 3분이다.
+출력된 Google 인증 주소를 시스템 브라우저에서 열어 계정을 선택하고 동의한다. 대기 시간은 10분이며 결과가 나올 때까지 터미널을 열어 둔다.
 프로그램은 무작위 포트의 `127.0.0.1`에서 이번 인증 응답만 받고 종료한다. PKCE S256·무작위 state를 검사한다.
 내장 웹뷰나 인증 코드 복사·붙여넣기 방식은 사용하지 않는다.
 터미널의 `connected:true`가 나와야 연결 완료다. 브라우저의 응답 수신 화면만으로 성공했다고 판단하지 않는다.
+
+시간이 지나 `GOOGLE_AUTH_TIMEOUT`이 나오거나 브라우저에서 `127.0.0.1` 연결 거부가 나타나면,
+이전 인증 탭을 닫고 같은 `--connect` 명령을 다시 실행해 **새로 출력된 주소**에서 진행한다.
+기존 주소 새로고침이나 인증 코드 복사로 복구하지 않는다. 만료된 시도의 기존 연결 정보는 변경하지 않는다.
+사용자가 동의를 취소한 경우에는 `GOOGLE_AUTH_CANCELLED`로 구분한다.
 
 첫 연결은 **JobShot 지원 일정** 캘린더 하나를 만든다. 계정 연결만으로 공고 이벤트를 만들지는 않는다.
 재연결은 기존 OAuth 클라이언트와 저장된 캘린더 ID를 사용하고 해당 계정의 접근을 확인한 후 인증 정보를 교체한다.
@@ -90,6 +96,8 @@ PATCH는 제목·설명·날짜만 바꾸고 무관한 속성을 보내지 않�
 | --- | --- |
 | STALE_POSTING | 공고가 바뀜. 미리보기를 다시 읽고 내용 확인 |
 | GOOGLE_NOT_CONNECTED / GOOGLE_AUTH | 연결·권한·토큰 만료 확인 후 연결 CLI 실행 |
+| GOOGLE_AUTH_TIMEOUT | 인증 대기 시간 초과. 이전 탭을 닫고 같은 --connect 명령의 새 주소로 다시 진행 |
+| GOOGLE_AUTH_CANCELLED | 인증 취소 또는 인증 주소 표시 실패. 연결하려면 --connect 명령을 다시 실행 |
 | DEADLINE_REQUIRED | 날짜 미정/상시. 날짜를 추측하지 않고 로컬에서 관리 |
 | conflict:true | Google 변경 내용을 보여주고 덮어쓰기 의사 확인 |
 | synced:false | 전송 실패 또는 결과 불명확. 가능하면 calendar.status에 sync_failed를 기록하고 로컬 내용 보존 |
@@ -125,6 +133,13 @@ node dist/google-cli.js --workspace "C:\JobShot" --disconnect
 
 ## 검증 범위
 
-현재 검증은 가상 Google 응답 기반 연결·등록·갱신·충돌·실패·복구, 실제 Windows DPAPI와 로컬 루프백 콜백,
-공식 MCP stdio 및 격리 Codex App Server의 미리보기까지다. 실제 계정 인증·권한·이벤트 표시는 별도 확인한다.
-현재 대화에 새 도구가 없으면 MCP 연결을 갱신한 뒤 확인하며, 도구 목록만 보고 직접 호출 완료라고 말하지 않는다.
+자동 검증은 가상 Google 응답 기반 연결·등록·갱신·충돌·실패·복구, Windows DPAPI와 로컬 루프백 콜백,
+공식 MCP stdio 및 격리 Codex App Server의 미리보기를 포함한다.
+2026-10-31 실제 계정에서 가상 일정 1개의 생성·API 재조회·중복 없는 재전송·날짜 변경·외부 수정 충돌·명시적 충돌 해결을 확인했다.
+사용자 승인으로 테스트 일정만 삭제했고 삭제된 일정의 자동 재생성 방지도 확인했다. 제품의 자동 삭제 기능을 추가한 것은 아니다.
+정리에는 Google의 [이벤트 삭제 API](https://developers.google.com/workspace/calendar/api/v3/reference/events/delete)를 사용했다.
+
+현재 대화의 가상 자료용 MCP에서 미리보기 성공·날짜 미정 거부·미연결 오류를 직접 확인했다.
+이 MCP 작업 폴더와 실제 계정을 연결한 작업 폴더는 다르다. 현재 대화의 `calendar_sync` 성공으로 기록하지 않으며,
+실사용 MCP는 연결 CLI의 `--workspace`와 같은 작업 폴더를 가리켜야 한다. 인증 파일을 다른 작업 폴더로 복사하지 않는다.
+실제 Google 화면의 이벤트 렌더링·권한 철회·공개 배포 심사 및 Windows 외 인증 저장소는 미검증이다.

@@ -1,5 +1,5 @@
 import { dirname, basename } from 'node:path';
-import { connectGoogle, defaultGoogleStore, disconnectGoogle, recoverCalendar } from './google-auth.js';
+import { AUTHORIZATION_TIMEOUT_MS, connectGoogle, defaultGoogleStore, disconnectGoogle, recoverCalendar } from './google-auth.js';
 import { publicError, fail } from './errors.js';
 import { MAX_TEXT_BYTES, Workspace } from './workspace.js';
 
@@ -24,7 +24,7 @@ if (args.length === 1 && args[0] === '--help') {
       let credentials: unknown;
       try { credentials = JSON.parse(source.read(basename(file), MAX_TEXT_BYTES).bytes.toString('utf8')); }
       catch { fail('GOOGLE_CLIENT', '선택한 Desktop OAuth JSON 파일을 읽지 못했습니다.'); }
-      result = await connectGoogle(store, credentials, url => { console.log(`시스템 브라우저에서 아래 주소를 열어 계정을 선택하고 동의하세요. 3분 안에 완료해 주세요.\n${url}`); });
+      result = await connectGoogle(store, credentials, url => { console.log(`시스템 브라우저에서 아래 주소를 열어 계정을 선택하고 동의하세요. ${AUTHORIZATION_TIMEOUT_MS / 60000}분 안에 완료해 주세요. 이 터미널은 연결 결과가 나올 때까지 열어 두세요.\n${url}`); });
     }
     console.log(JSON.stringify(result));
   } catch (error) { console.error(JSON.stringify(publicError(error))); process.exitCode = 1; }

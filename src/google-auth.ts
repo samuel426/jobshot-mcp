@@ -5,12 +5,13 @@ import { isAbsolute, join, parse, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { z } from 'zod';
 import { replace } from './calendar.js';
-import { fail } from './errors.js';
+import { fail, JobShotError } from './errors.js';
 import { googleError, GoogleHttpError, googleRequest, type Fetch } from './google-http.js';
 import { calendarPreview, calendarSync, withWorkspaceLock, type CalendarProvider, type EventPayload, type RemoteEvent, type SyncInput } from './google-sync.js';
 import { MAX_TEXT_BYTES, sha256, Workspace } from './workspace.js';
 
 export const GOOGLE_SCOPE = 'https://www.googleapis.com/auth/calendar.app.created';
+export const AUTHORIZATION_TIMEOUT_MS = 10 * 60 * 1000;
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const API = 'https://www.googleapis.com/calendar/v3';
 const secret = z.string().min(1).max(16000).regex(/^\S+$/);
@@ -75,7 +76,7 @@ export function defaultGoogleStore(workspace: Workspace) {
   return new GoogleAuthStore(workspace, join(process.env.LOCALAPPDATA, 'JobShot', 'google-auth', sha256(workspace.root)));
 }
 
-export async function startAuthorization(clientId: string, timeoutMs = 180000) {
+export async function startAuthorization(clientId: string, timeoutMs = AUTHORIZATION_TIMEOUT_MS) {
   const state = randomBytes(32).toString('base64url'), verifier = randomBytes(32).toString('base64url');
   let accept!: (code: string) => void, reject!: (error: unknown) => void;
   const code = new Promise<string>((resolve, fail) => { accept = resolve; reject = fail; });
@@ -107,7 +108,7 @@ export async function startAuthorization(clientId: string, timeoutMs = 180000) {
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   url.search = new URLSearchParams({ client_id: clientId, redirect_uri: redirectUri, response_type: 'code', scope: GOOGLE_SCOPE,
     state, code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256', access_type: 'offline', prompt: 'consent' }).toString();
-  const timer = setTimeout(() => reject(new Error('Authorization timeout')), timeoutMs);
+  const timer = setTimeout(() => reject(new JobShotError('GOOGLE_AUTH_TIMEOUT', 'Google 인증 대기 시간이 지났습니다. 이전 인증 탭을 닫고 같은 --connect 명령을 다시 실행한 뒤 새 주소에서 동의하세요. 기존 연결은 유지했습니다.')), timeoutMs);
   const close = () => { clearTimeout(timer); server.close(); server.closeAllConnections(); };
   return { url: url.href, code, verifier, redirectUri, close };
 }
@@ -177,7 +178,10 @@ export async function connectGoogle(store: GoogleAuthStore, credentials: unknown
     const session = await authorize(parsed.data.installed.client_id);
     let code: string;
     try { await show(session.url); code = await session.code; }
-    catch { return fail('GOOGLE_AUTH_CANCELLED', 'Google 인증이 취소되거나 시간이 지났습니다. 기존 연결은 유지했습니다.'); }
+    catch (error) {
+      if (error instanceof JobShotError && error.code === 'GOOGLE_AUTH_TIMEOUT') throw error;
+      return fail('GOOGLE_AUTH_CANCELLED', 'Google 인증이 취소됐거나 인증 주소를 표시하지 못했습니다. 같은 --connect 명령으로 다시 연결할 수 있습니다. 기존 연결은 유지했습니다.');
+    }
     finally { session.close(); }
     const tokens = await tokenRequest({ ...parsed.data.installed, code, code_verifier: session.verifier, redirect_uri: session.redirectUri, grant_type: 'authorization_code' }, send);
     if (!tokens.refresh_token || !tokens.scope?.split(' ').includes(GOOGLE_SCOPE)) fail('GOOGLE_SCOPE', '갱신 토큰과 전용 캘린더 권한을 확인하지 못했습니다. 기존 연결을 유지합니다.');
