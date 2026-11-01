@@ -5,7 +5,7 @@ import { publicError } from './errors.js';
 
 const args = process.argv.slice(2);
 if (args.length === 1 && args[0] === '--help') {
-  console.log('JobShot MCP\nUsage: node dist/cli.js --workspace <existing absolute folder>\nTools: profile_list, profile_read, posting_import, posting_list, posting_track, dashboard_build, posting_get, posting_save_analysis, application_save\nTransport: stdio (no HTTP listener)');
+  console.log('JobShot MCP\nUsage: node dist/cli.js --workspace <existing absolute folder>\nTools: profile_list, profile_read, posting_import, posting_list, posting_track, dashboard_build, posting_get, posting_save_analysis, application_save, calendar_preview, calendar_sync\nTransport: stdio (no HTTP listener)');
 } else if (args.length !== 2 || args[0] !== '--workspace' || !args[1]) {
   console.error('Usage: node dist/cli.js --workspace <existing absolute folder>');
   process.exitCode = 1;

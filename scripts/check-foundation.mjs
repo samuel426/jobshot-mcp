@@ -1,4 +1,4 @@
-// Repository checks only. This does not run or test the future MCP product.
+// Repository checks only. Product behavior is covered by the test suite.
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -15,7 +15,7 @@ const privatePaths = [
   'dashboard/index.html',
   '.jobshot/calendar/auth.json',
   '.env', '.env.local', 'credentials.json', 'client_secret_example.json',
-  'token.json', 'tokens.json', 'private.key', '.mcp.json',
+  'token.json', 'tokens.json', 'connection.bin', 'private.key', '.mcp.json',
   '.codex/config.toml', '.claude/settings.local.json', 'debug.log',
 ];
 const publicPaths = [
@@ -42,7 +42,7 @@ for (const path of tracked) {
   const allowedMarker = /^(개인 자료|공고|dashboard)\/\.gitkeep$/u.test(path);
   assert.ok(!inPrivateDirectory || allowedMarker, `Private file is tracked: ${path}`);
   const basename = path.split('/').at(-1);
-  const credential = /^(\.env(?:\..*)?|credentials.*\.json|client_secret.*\.json|tokens?\.json|\.mcp\.json)$/.test(basename)
+  const credential = /^(\.env(?:\..*)?|credentials.*\.json|client_secret.*\.json|tokens?\.json|connection\.bin|\.mcp\.json)$/.test(basename)
     || /\.(pem|key)$/.test(basename);
   assert.ok(!credential || basename === '.env.example', `Credential file is tracked: ${path}`);
 }

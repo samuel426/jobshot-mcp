@@ -1,7 +1,7 @@
 # 구조와 데이터 설계
 
-상태: 3단계 직무 적합도·지원서류 저장 구현. `profile_list`, `profile_read`, `posting_import`, `posting_list`, `posting_track`, `dashboard_build`, `posting_get`, `posting_save_analysis`, `application_save`를 제공한다.
-AI 판단과 문장 작성은 클라이언트가 수행하고 MCP는 평가 구조·자료 버전·인용·배점을 검증한다. Google 연동은 후속 설계다. 사용법은 [시작하기](getting-started.md)를 따른다.
+상태: 4단계 Google 선택 전송 첫 구현. `profile_list`, `profile_read`, `posting_import`, `posting_list`, `posting_track`, `dashboard_build`, `posting_get`, `posting_save_analysis`, `application_save`, `calendar_preview`, `calendar_sync`를 제공한다.
+AI 판단과 문장 작성은 클라이언트가 수행하고 MCP는 평가 구조·자료 버전·인용·배점을 검증한다. Google 실제 계정 검증은 남아 있다. 사용법은 [시작하기](getting-started.md)를 따른다.
 
 ## 역할 분리
 
@@ -50,7 +50,7 @@ skills/jobshot-coach/SKILL.md         사용자 지원 절차, 공개 가능
 | status | imported / analyzed / tracked / submitted / closed / archived |
 | profile_sources | 사용한 개인 파일의 상대 경로·해시·확인 시각 |
 | evaluation | 평가 기준 버전, 근거, 정보 부족 항목, 점수 |
-| calendar | 후속 Google 연동용 필드. 로컬 등록으로 변경하지 않으며 현재 null 유지 |
+| calendar | 전송 전 null. Google 전송 시 대상·이벤트 ID·etag·마지막 전송 내용·시각·결과·오류 기록. 로컬 달력 등록으로 변경하지 않음 |
 | tracking_previous_status | 로컬 등록 전 imported/analyzed 상태. 해제 시 복원하고 필드 제거 |
 | created_at / updated_at | 기록 시각 |
 
@@ -102,9 +102,9 @@ HTML에는 등록된 공고의 최소 정보만 넣고 개인 이력서 본문�
 HTML 출력 경로를 먼저 검사하고 상태를 저장한다. 그 이후 HTML 쓰기만 실패하면 `dashboard_updated:false`와 재생성 안내를 반환한다. 저장된 등록 상태를 성공/실패와 함께 명확히 알린다.
 재입력은 tracked 상태도 인식하며 등록을 취소하지 않는다. 손상된 공고·중복 ID·지원하지 않는 날짜/링크는 기존 HTML을 유지하고 오류로 알린다.
 
-## MCP 도구 후보
+## MCP 도구
 
-| 후보 도구 | 역할 | 변경 |
+| 도구 | 역할 | 변경 |
 | --- | --- | --- |
 | profile_list / profile_read | 선택한 개인 자료 조회 | 원본 변경 없음 |
 | posting_import | 원본·분할본 보관과 공고 기록 | 로컬 공고만 생성 |
@@ -113,6 +113,7 @@ HTML 출력 경로를 먼저 검사하고 상태를 저장한다. 그 이후 HTM
 | posting_track | 사용자 요청 공고를 달력 대상으로 지정 | 상태 변경 |
 | dashboard_build | 등록 공고의 월간 HTML 생성 | 로컬 생성물 갱신 |
 | application_save | 요청한 서류·평가 저장 | 별도 버전 생성 |
+| calendar_preview | 선택 공고의 Google 전송 내용·최신 해시 확인 | 네트워크 요청 없음 |
 | calendar_sync | 선택한 공고를 Google에 등록·갱신 | 외부 쓰기 |
 
 도구가 자체적으로 합격률을 산출하거나 AI 서비스로 몰래 전송하지 않는다.
@@ -130,11 +131,11 @@ HTML 출력 경로를 먼저 검사하고 상태를 저장한다. 그 이후 HTM
 
 ## Google 연동 경계
 
-4단계에서 공식 인증 가이드와 배포 요건을 확인한다. 사용자의 계정 연결과 캘린더 선택이 필요하다.
-개발자 공용 인증 서버는 만들지 않는다. 로컬 인증 정보 보관 방식과 배포용 OAuth 구성을 검토한다.
-공개 앱 검증·테스트 사용자 제한·토큰 만료 등은 실제 설정으로 확인하기 전 해결됐다고 보장하지 않는다.
+사용자 선택으로 앱이 만든 전용 보조 캘린더만 사용한다. `calendar.app.created` 권한 하나를 요청한다.
+별도 Windows CLI가 Desktop OAuth의 PKCE·state·127.0.0.1 임시 포트로 연결한다. 토큰은 작업 폴더 밖 LocalAppData에 Windows DPAPI CurrentUser로 보호한다. MCP 입력으로 인증 정보를 받지 않는다.
+공개 앱 검증·테스트 사용자 제한·토큰 만료 등 실제 Google 설정 검증은 남아 있다. [연결·해제·복구 안내](google-calendar.md)를 따른다.
 
-첫 버전은 로컬 → Google 단방향 수동 동기화다. 선택한 날짜·회사·직무·공고 링크만 전송한다.
-공고 ID와 Google 이벤트 ID를 연결해 재시도와 수정 시 중복을 방지한다.
-외부에서 사용자가 바꾼 일정과 충돌하면 덮어쓰기 전에 차이를 제시한다.
-실패는 `sync_failed`로 남기고 로컬 공고·일정은 유지한다. 자동 초대나 참석자 추가는 하지 않는다.
+첫 버전은 로컬 → Google 단방향 수동 동기화다. 회사·직무·확인된 마감 날짜·공고 링크와 중복·소유 확인용 식별자만 전송한다. 날짜만 확인된 마감을 하루 종일 일정으로 표시한다.
+안정적인 이벤트 ID와 소유 표식으로 재시도·409 충돌 시 기존 이벤트를 확인한다. 외부 etag가 바뀌면 차이와 현재 버전을 반환하고 명시적 덮어쓰기 요청 후에만 If-Match 조건으로 갱신한다. 삭제·참석자·반복 일정은 자동 변경하지 않는다.
+공고 해시와 비동기 저장 잠금으로 동시 변경을 검사한다. 실패는 `sync_failed`로 남기며 로컬 공고·등록 상태·HTML·원본은 보존한다. 외부 성공 후 로컬 기록만 실패하면 두 결과를 구분하고 같은 ID로 재시도한다.
+전용 캘린더 생성 결과가 불명확하면 다시 만들지 않고 연결 표식을 검사하는 복구 명령을 제공한다. 연결 해제는 토큰 비활성화·권한 철회만 수행하며 기존 이벤트를 삭제하지 않는다.

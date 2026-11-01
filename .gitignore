@@ -18,6 +18,7 @@ credentials*.json
 client_secret*.json
 token.json
 tokens.json
+connection.bin
 *.pem
 *.key
 .mcp.json

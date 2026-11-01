@@ -2,8 +2,8 @@
 
 채용공고 캡처를 지원 일정과 나만의 취업 준비 계획으로 바꾸는 개인용 MCP 프로젝트.
 
-> 현재 상태: 3단계 진행 — 개인 자료 조회·공고 보관·로컬 월간 달력·직무 적합도·지원서류 버전과 문항별 평가 저장.
-> Windows 캡처와 Codex 대화의 입력·달력 도구 직접 호출, 사용자 캡처의 달력 화면을 확인했습니다. AI 클라이언트가 작성한 초안과 평가를 검증·저장합니다. 새 서류 도구의 현재 대화 직접 호출과 Google 연동은 남아 있습니다.
+> 현재 상태: 4단계 첫 구현 — 공고·로컬 달력·직무 적합도·항상 평가를 포함한 지원서류와 선택적 Google 전송.
+> Windows 캡처와 Codex 대화의 입력·달력 도구 직접 호출을 확인했습니다. Google 연동은 가상 응답으로 검증했으며 실제 계정 연결·전송과 새 도구의 현재 대화 직접 호출은 남아 있습니다.
 
 ## 목표하는 경험
 
@@ -34,13 +34,14 @@ node dist/cli.js --help
 ```
 
 [설치·MCP 연결·공고 입력 안내](docs/getting-started.md)를 따라 연결하세요.
-현재 도구는 `profile_list`, `profile_read`, `posting_import`, `posting_list`, `posting_track`, `dashboard_build`, `posting_get`, `posting_save_analysis`, `application_save` 아홉 가지입니다.
+현재 도구는 `profile_list`, `profile_read`, `posting_import`, `posting_list`, `posting_track`, `dashboard_build`, `posting_get`, `posting_save_analysis`, `application_save`, `calendar_preview`, `calendar_sync` 열한 가지입니다.
 개인 자료는 UTF-8 TXT·MD·JSON, 공고 원본은 PNG·JPEG·WebP 한 장을 지원합니다.
 프로젝트 폴더의 `inbox/`에 이미지를 저장하면 공고별 폴더에 원본 그대로 보관하고 긴 이미지는 별도로 분할합니다.
 Windows에서는 캡처 후 `node dist/capture-cli.js --workspace "작업 폴더 절대 경로"`로 현재 클립보드 이미지를 한 번 저장할 수 있습니다.
 보관한 공고 중 원하는 것만 로컬 달력에 등록하면 `dashboard/index.html`이 생성됩니다. 파일을 브라우저로 열면 현재 월·오늘·원문 링크를 확인할 수 있습니다. 외부 서버는 필요하지 않습니다.
 [직무 적합도 저장 안내](docs/job-fit.md)에 따라 공고와 선택 자료를 비교한 근거를 저장할 수 있습니다.
 [지원서류 저장 안내](docs/applications.md)에 따라 초안과 평가를 항상 함께 새 버전으로 보존합니다. 자소서는 항목별 점수·점수 근거·감점 이유, 이력서는 숫자 점수 없이 강점·부족한 근거·개선안을 보여줍니다.
+[Google 연결 안내](docs/google-calendar.md)에 따라 Windows에서 본인 OAuth 설정으로 JobShot 전용 캘린더를 연결할 수 있습니다. 전송 미리보기는 계정 연결 없이 가능하며 실제 Google 전송은 별도 요청이 필요합니다.
 실사용 지원 범위는 시작 안내를 확인하세요.
 실제 자료를 공개 이슈나 PR에는 첨부하지 마세요.
 AI에 프로젝트를 설명할 때는 [AGENTS.md](AGENTS.md)를 읽도록 요청하세요.
