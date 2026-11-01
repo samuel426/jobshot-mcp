@@ -75,8 +75,23 @@ status는 로컬 연결 정보다. 실제 Google 권한 유효성은 요청할 �
 3. `synced`, `local_record_updated`, `conflict`, `error`를 확인하고 실제 결과를 안내한다.
 
 로컬 달력에 등록하지 않은 imported/analyzed 공고도 Google 전송을 별도로 요청할 수 있다.
-Google 전송은 로컬 달력 등록 상태를 바꾸지 않는다. 저장된 공고의 회사·직무·날짜·링크를 반영하며 이 도구 자체가 공고 메타데이터를 편집하지는 않는다.
+Google 전송 성공은 로컬 달력 등록 상태를 바꾸지 않는다. 2026-11-01 사용자 결정으로 연결·전송 실패 또는 충돌 시 해당 공고를 로컬 웹 달력에 자동 등록한다. 저장된 공고의 회사·직무·날짜·링크를 반영하며 이 도구 자체가 공고 메타데이터를 편집하지는 않는다.
 현재 별도의 공고 날짜 편집 MCP 도구는 없으며, 테스트는 가상 기록의 변경으로 갱신 동작을 확인한다.
+
+## Google 실패 시 로컬 웹 달력
+
+`calendar_sync`는 Google 미연결·권한·네트워크 실패 또는 원격 충돌 시 같은 공고를 `tracked`로 등록하고 `dashboard/index.html`을 만든다. 별도 서버·Google 연결 없이 브라우저에서 열 수 있다. 재시도해도 같은 공고가 중복 등록되지 않으며 등록 해제 시 이전 imported/analyzed 상태로 돌아간다.
+
+| 응답 | 안내 |
+| --- | --- |
+| synced:false + local_calendar.tracked:true + dashboard_updated:true | Google 미완료/확인 필요, 로컬 등록·화면 생성 완료. 로컬 path를 열어 관리 |
+| synced:false + local_calendar.tracked:true + dashboard_updated:false | 상태만 저장됨. dashboard_build로 HTML을 다시 생성 |
+| local_calendar.error | 로컬 대체 등록도 실패. 오류 확인 후 재시도 |
+| local_calendar.attempted:false | 로컬 기록 저장을 확인하지 못해 추가 변경 중단 |
+
+`remote_result:unconfirmed`는 Google에 실제로 저장됐는지 확인이 필요한 상태다. 로컬 등록 성공으로 Google 실패/성공 여부를 단정하지 않는다. 충돌의 원격 내용·etag와 원래 Google 오류는 그대로 반환한다. 자동 대체 등록 뒤 `posting_sha256`은 최신 로컬 기록을 가리키며 Google 재시도 전 미리보기를 다시 읽는다.
+
+잘못된 입력·오래된 미리보기·파일 검증 오류는 대체 등록하지 않는다. Google 결과 저장 실패나 등록 직전 해시 불일치도 자동 등록을 중단한다. 날짜 미정·상시는 Google 미리보기 단계에서 중단하므로 원하면 `posting_track`으로 로컬 목록에 등록한다. 개인 자료·지원서류·원본 이미지는 수정하지 않는다.
 
 ## 중복과 충돌
 
@@ -139,7 +154,7 @@ node dist/google-cli.js --workspace "C:\JobShot" --disconnect
 사용자 승인으로 테스트 일정만 삭제했고 삭제된 일정의 자동 재생성 방지도 확인했다. 제품의 자동 삭제 기능을 추가한 것은 아니다.
 정리에는 Google의 [이벤트 삭제 API](https://developers.google.com/workspace/calendar/api/v3/reference/events/delete)를 사용했다.
 
-현재 대화의 가상 자료용 MCP에서 미리보기 성공·날짜 미정 거부·미연결 오류를 직접 확인했다.
-이 MCP 작업 폴더와 실제 계정을 연결한 작업 폴더는 다르다. 현재 대화의 `calendar_sync` 성공으로 기록하지 않으며,
+2026-10-31 대화의 가상 자료용 MCP에서 미리보기 성공·날짜 미정 거부·미연결 오류를 직접 확인했다.
+당시 MCP 작업 폴더와 실제 계정을 연결한 작업 폴더는 달랐다. 2026-11-01 프로젝트 MCP 설정을 실사용 폴더로 전환하고 stdio 도구 발견과 기존 Google 캘린더 읽기 접근을 확인했다. 현재 대화에는 재연결 후 반영을 확인해야 한다. 현재 대화의 `calendar_sync` 성공으로 기록하지 않으며,
 실사용 MCP는 연결 CLI의 `--workspace`와 같은 작업 폴더를 가리켜야 한다. 인증 파일을 다른 작업 폴더로 복사하지 않는다.
 실제 Google 화면의 이벤트 렌더링·권한 철회·공개 배포 심사 및 Windows 외 인증 저장소는 미검증이다.

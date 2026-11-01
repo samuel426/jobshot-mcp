@@ -1,6 +1,6 @@
 # 현재 버전 시작하기
 
-4단계 진행: 로컬 파일 조회, 공고 보관, 월간 HTML 달력, 직무 적합도·지원서류 저장에 Google 전용 캘린더 선택 전송을 추가했다. Google 실제 계정 연결 검증은 남아 있다.
+4단계 진행: 로컬 파일 조회, 공고 보관, 월간 HTML 달력, 직무 적합도·지원서류 저장에 Google 전용 캘린더 선택 전송을 추가했다. 실제 Google 계정 연결·가상 이벤트 API를 검증했고 Google 실패 시 로컬 웹 달력으로 이어서 관리할 수 있다.
 
 ## 설치
 
@@ -188,7 +188,9 @@ AI가 이미지를 볼 수 있는 도구를 제공한다면 `folder/사진/` 뒤
 ## Google 전용 캘린더로 보내기
 
 [Google 연결·전송 안내](google-calendar.md)에 따라 Windows에서 Desktop OAuth 설정 파일로 계정을 연결한다. 연결은 전용 캘린더를 준비하며 공고를 자동 전송하지 않는다.
-MCP를 재연결하면 기존 9개와 `calendar_preview`, `calendar_sync`를 포함한 11개 도구가 보인다. 미리보기로 전송 내용을 확인한 뒤 사용자가 선택한 공고만 전송한다. 실제 계정 동의·등록·갱신·해제 검증은 아직 남아 있다.
+MCP를 재연결하면 기존 9개와 `calendar_preview`, `calendar_sync`를 포함한 11개 도구가 보인다. 미리보기로 전송 내용을 확인한 뒤 사용자가 선택한 공고만 전송한다. 실제 계정 동의·가상 이벤트 등록·갱신은 확인했으며 실제 권한 해제 검증은 남아 있다.
+
+Google 등록이 실패하면 같은 공고를 로컬 달력에 자동 등록한다. 응답의 local_calendar.dashboard_updated가 true이면 작업 폴더의 dashboard/index.html을 연다. tracked:true지만 dashboard_updated:false면 dashboard_build로 다시 만든다. 이 화면의 일정 표시와 Google 전송 성공은 구분한다. 날짜 미정·오래된 미리보기·파일 충돌 등 입력 문제는 자동 대체 등록 대상이 아니므로 안내에 따라 먼저 확인한다.
 
 ## Windows 캡처를 inbox에 저장
 
