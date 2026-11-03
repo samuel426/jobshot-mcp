@@ -71,9 +71,15 @@ export class GoogleAuthStore {
   lock<T>(action: () => Promise<T>) { return withWorkspaceLock(this.files, action); }
 }
 
+export function googleAuthDirectory(workspace: Workspace, env: NodeJS.ProcessEnv = process.env) {
+  const root = env.JOBSHOT_AUTH_HOME ?? (env.LOCALAPPDATA ? join(env.LOCALAPPDATA, 'JobShot', 'google-auth') : undefined);
+  if (!root || !isAbsolute(root)) fail('INVALID_PATH', 'JOBSHOT_AUTH_HOME 또는 LOCALAPPDATA에 인증 저장소의 절대 경로가 필요합니다.');
+  return join(root, sha256(workspace.root));
+}
+
 export function defaultGoogleStore(workspace: Workspace) {
-  if (process.platform !== 'win32' || !process.env.LOCALAPPDATA) fail('GOOGLE_PLATFORM', 'Google 인증은 현재 Windows에서만 지원합니다.');
-  return new GoogleAuthStore(workspace, join(process.env.LOCALAPPDATA, 'JobShot', 'google-auth', sha256(workspace.root)));
+  if (process.platform !== 'win32') fail('GOOGLE_PLATFORM', 'Google 인증은 현재 Windows에서만 지원합니다.');
+  return new GoogleAuthStore(workspace, googleAuthDirectory(workspace));
 }
 
 export async function startAuthorization(clientId: string, timeoutMs = AUTHORIZATION_TIMEOUT_MS) {
@@ -169,12 +175,15 @@ async function accessToken(store: GoogleAuthStore, send: Fetch) {
 }
 
 const marker = (connection: Connection) => `JobShot 전용 지원 일정 · 연결 ID ${connection.calendar_marker}`;
-export async function connectGoogle(store: GoogleAuthStore, credentials: unknown, show: (url: string) => void | Promise<void>, send: Fetch = fetch, authorize = startAuthorization) {
+export async function connectGoogle(store: GoogleAuthStore, credentials: unknown, show: (url: string) => void | Promise<void>, send: Fetch = fetch, authorize = startAuthorization, existingCalendarId?: string) {
+  if (existingCalendarId !== undefined && (!existingCalendarId.endsWith('@group.calendar.google.com') || existingCalendarId.length > 1024 || /\s/.test(existingCalendarId)))
+    fail('INVALID_INPUT', '기존 JobShot 전용 보조 캘린더 ID를 입력하세요.');
   const parsed = z.object({ installed: clientSchema }).safeParse(credentials);
   if (!parsed.success) fail('GOOGLE_CLIENT', 'Google Cloud에서 만든 Desktop app OAuth JSON 파일이 필요합니다. 파일을 대화에 붙여넣지 마세요.');
   return store.lock(async () => {
     const previous = store.load();
     if (previous && previous.client.client_id !== parsed.data.installed.client_id) fail('GOOGLE_CLIENT_CHANGED', '기존 연결과 다른 OAuth 클라이언트입니다. 기존 연결 파일을 덮어쓰지 않습니다.');
+    if (existingCalendarId !== undefined && previous) fail('GOOGLE_RECOVERY', '저장된 연결이 있습니다. 기존 연결은 --connect 또는 --recover-calendar로 복구하세요.');
     const session = await authorize(parsed.data.installed.client_id);
     let code: string;
     try { await show(session.url); code = await session.code; }
@@ -187,12 +196,17 @@ export async function connectGoogle(store: GoogleAuthStore, credentials: unknown
     if (!tokens.refresh_token || !tokens.scope?.split(' ').includes(GOOGLE_SCOPE)) fail('GOOGLE_SCOPE', '갱신 토큰과 전용 캘린더 권한을 확인하지 못했습니다. 기존 연결을 유지합니다.');
     let current: Connection = { version: 1, workspace_key: store.key, calendar_marker: previous?.calendar_marker ?? randomBytes(16).toString('hex'), client: parsed.data.installed,
       refresh_token: tokens.refresh_token, access_token: tokens.access_token, expires_at: Date.now() + tokens.expires_in * 1000,
-      calendar_id: previous?.calendar_id ?? null, setup: previous?.setup ?? 'authorized' };
+      calendar_id: existingCalendarId ?? previous?.calendar_id ?? null, setup: previous?.setup ?? 'authorized' };
     const api = new GoogleCalendarAPI(current.calendar_id ?? '', async () => tokens.access_token, send);
     if (current.calendar_id) {
       try {
-        const calendar = await api.request(`calendars/${encodeURIComponent(current.calendar_id)}`) as { id?: string };
+        const calendar = await api.request(`calendars/${encodeURIComponent(current.calendar_id)}`) as { id?: string; description?: unknown };
         if (calendar?.id !== current.calendar_id) fail('GOOGLE_RESPONSE', '기존 전용 캘린더를 확인하지 못했습니다.');
+        if (existingCalendarId !== undefined) {
+          const match = typeof calendar.description === 'string' && /^JobShot 전용 지원 일정 · 연결 ID ([a-f0-9]{32})$/.exec(calendar.description);
+          if (!match) fail('GOOGLE_RECOVERY', 'JobShot 전용 캘린더 표식을 확인하지 못했습니다. 연결을 저장하지 않았습니다.');
+          current = { ...current, calendar_marker: match[1]! };
+        }
       } catch (error) { return googleError(error); }
       store.save({ ...current, setup: 'ready' });
       return { connected: true, calendar_id: current.calendar_id, created: false };

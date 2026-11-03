@@ -17,7 +17,7 @@ test('real stdio client discovers tools, reads selected material, imports and re
   const source = join(root, '개인 자료', '가상이력서.md');
   writeFileSync(source, '가상 인물의 테스트용 프로젝트 경험');
   const client = new Client({ name: 'jobshot-integration-test', version: '1.0.0' });
-  const transport = new StdioClientTransport({ command: process.execPath, args: [cli, '--workspace', root], stderr: 'pipe', env: { ...process.env, LOCALAPPDATA: join(root, 'synthetic-auth') } });
+  const transport = new StdioClientTransport({ command: process.execPath, args: [cli, '--workspace', root], stderr: 'pipe', env: { ...process.env, LOCALAPPDATA: join(root, 'synthetic-auth'), JOBSHOT_AUTH_HOME: join(root, 'synthetic-auth') } });
   let stderr = '';
   transport.stderr?.on('data', chunk => { stderr += chunk.toString(); });
   try {
