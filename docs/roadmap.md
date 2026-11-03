@@ -14,6 +14,8 @@
 
 ## 진행 상태
 
+현재 요약(2026-11-04): 핵심 기능 구현은 병합됐다. #4의 직무 분석·자소서·이력서 현재 대화 직접 저장과 수정본·유보·실패 경로 검증도 완료했으며 사용자 피드백은 대기 중이다. PR #20 이후 앱 재시작 후 인증 유지와 기존 Google 캘린더 읽기를 확인했다. 남은 검증은 #4 사용자 흐름 피드백, #5 실제 MCP Google 전송·화면·권한 철회, #3 브라우저 조작·CSP·모바일, #6 배포 준비 순서로 관리한다. 날짜별 기록은 당시 상태이며 최신 결과는 [2026-11-04 기록](work-log/2026-11-04.md)을 따른다.
+
 - [0단계 이슈 #1](https://github.com/samuel426/jobshot-mcp/issues/1): 완료. [PR #7](https://github.com/samuel426/jobshot-mcp/pull/7) 병합 확인.
 - 1단계: [첫 구현 PR #8](https://github.com/samuel426/jobshot-mcp/pull/8) 병합 확인. 개인 자료 조회·이미지 원본 저장·stdio 테스트 완료.
 - 2026-10-16: [PR #9](https://github.com/samuel426/jobshot-mcp/pull/9)에서 긴 이미지 분할·좌표 기록과 Windows 캡처 CLI 구현·병합.
@@ -32,7 +34,7 @@
 - 2026-11-01: 사용자 병합 후 PR #16의 merge commit `4c37533`을 확인했다. [이슈 #17](https://github.com/samuel426/jobshot-mcp/issues/17)에서 Google 실패·충돌 시 로컬 웹 달력 자동 등록을 추가했다. 제품 요구사항·결과 안내·중복/동시 변경/부분 저장 방어를 반영하고 Windows 전체 테스트 80개를 통과했다. 프로젝트 MCP를 기존 Google 연결 작업 폴더로 전환해 설정 적용·새 stdio 도구 계약·Google 캘린더 읽기 접근을 확인했다. 현재 대화 재연결 후 직접 호출은 남아 있다.
 - 후속 이슈: [공고 입력 #2](https://github.com/samuel426/jobshot-mcp/issues/2), [HTML 달력 #3](https://github.com/samuel426/jobshot-mcp/issues/3), [서류·평가 #4](https://github.com/samuel426/jobshot-mcp/issues/4), [Google 연동 #5](https://github.com/samuel426/jobshot-mcp/issues/5), [배포·검증 #6](https://github.com/samuel426/jobshot-mcp/issues/6).
 
-## 현재 작업: 4단계 실사용 연결과 로컬 웹 대체 등록
+## 현재 작업: 3단계 서류 실사용 검증과 후속 배포 준비
 
 새 공고 입력 시 원본을 보존하고 긴 이미지를 겹침·좌표가 있는 PNG 조각으로 저장한다.
 Windows 캡처 CLI → inbox 파일 → MCP 원본·분할본 저장 경로를 제공한다.
@@ -42,7 +44,7 @@ Windows 캡처 CLI → inbox 파일 → MCP 원본·분할본 저장 경로를 �
 로컬 달력은 등록한 공고만 표시하며 날짜 미정·상시 목록, 원문 링크, 오늘 강조·월 이동과 날짜 갱신을 제공한다.
 DOM 테스트와 실제 브라우저 확인은 구분한다. 2026-10-23 사용자 캡처로 데스크톱 화면을 확인했고 친구 피드백은 남아 있다.
 직무 적합도 저장에 이어 `application_save`로 자소서·이력서 초안과 평가를 항상 함께 별도 버전으로 저장한다. 자소서는 기존 v0.1 배점·자료 버전·정확한 인용·미확인 점수 유보와 항목별 감점 이유를 적용한다. 이력서는 강점·부족한 근거·개선안을 평가하고 숫자 점수는 유보한다. 공고 상태와 원본을 유지하고 JSON·Markdown 완성 후 버전 폴더를 공개한다.
-세부 사용법은 [직무 적합도 저장](job-fit.md)과 [지원서류 저장](applications.md)을 따른다. 2026-10-25 작업은 기능·자동 검증 범위이며 현재 앱의 새 서류 도구 직접 호출은 연결 갱신 후 확인한다.
+세부 사용법은 [직무 적합도 저장](job-fit.md)과 [지원서류 저장](applications.md)을 따른다. 2026-11-04 현재 대화에서 가상 자료로 분석·자소서·이력서 저장, 수정본·평가 유보·실패 안내와 이전 버전 보존을 확인했다. 사용자 평가 이해도 피드백과 실제 플랫폼 글자 수 확인은 구분해 남긴다.
 
 Google 첫 버전은 기존 캘린더 선택 대신 JobShot 전용 보조 캘린더와 `calendar.app.created` 권한을 사용한다. `calendar_preview`와 `calendar_sync`로 로컬 등록과 독립적으로 전송한다. Windows DPAPI로 인증 정보를 보호하며 외부 변경·삭제·부분 실패를 구분한다. [Google 연결 안내](google-calendar.md)와 [2026-10-31 작업 기록](work-log/2026-10-31.md)을 따른다. 실제 계정의 가상 이벤트 API 검증은 완료했으며 실사용 MCP 연결·권한 철회·화면 확인이 남아 4단계 전체 완료로 표시하지 않는다.
 

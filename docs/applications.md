@@ -74,6 +74,7 @@ claims의 각 항목은 `{text, status, evidence, note}`다.
 
 각 항목은 `{status, score, reason, deduction_reason, answer_quotes}`다. status는 assessed/unknown이며,
 assessed만 0~배점의 점수를 갖고 unknown은 null이다. answer_quotes는 해당 문항 답변의 정확한 근거 문장 목록이다.
+각 항목의 answer_quotes는 1~10개이며 unknown으로 유보한 항목도 최소 한 개의 본문 인용이 필요하다. 분량 기준 미확인처럼 본문 밖 정보가 부족한 경우에는 평가 대상 본문을 인용하고 reason·deduction_reason에 부족한 기준과 유보 이유를 적는다. 빈 배열은 저장 전에 도구 입력 검증에서 거부된다.
 reason에는 점수를 준 구체적 이유와 충족한 부분, deduction_reason에는 감점한 부분과 이유를 적는다.
 만점이면 감점 없음, 미평가면 유보 이유를 적는다. 서버는 maximum(배점)과 deducted(배점−점수)를 계산한다. 미평가 항목의 deducted는 null이다.
 문항마다 서버가 합계를 계산하고 인사담당자 관점의 전달력·실무자 관점의 구체성·개선 우선순위를 함께 기록한다.
@@ -88,6 +89,7 @@ reason에는 점수를 준 구체적 이유와 충족한 부분, deduction_reaso
 
 resume의 evaluation은 `{type:"resume_qualitative", strengths, evidence_gaps, recruiter_view, practitioner_view, improvement_priorities}`다.
 strengths(강점)와 evidence_gaps(부족한 근거)는 각각 `{comment, answer_quotes}` 목록이며 인용은 해당 항목 본문에 존재해야 한다.
+각 강점·부족한 근거 항목의 answer_quotes도 1~10개다.
 확인할 강점·부족한 근거가 없으면 빈 목록으로 표시할 수 있다. improvement_priorities는 한 개 이상의 구체적인 개선안이다.
 서버는 평가 시각과 `mode:"qualitative"`, `score:null`, `withheld:true` 및 숫자 점수 유보 이유를 기록한다.
 자소서는 `mode:"scored"`로 구분한다. 이력서에 score를 입력하거나 자소서 평가를 넣으면 거부한다.
