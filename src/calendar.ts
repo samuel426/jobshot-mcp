@@ -94,12 +94,13 @@ export function dashboardBuild(workspace: Workspace) {
   });
 }
 
-export function postingTrack(workspace: Workspace, id: string, tracked: boolean, writeDashboard = replace) {
+export function postingTrack(workspace: Workspace, id: string, tracked: boolean, writeDashboard = replace, expectedSha?: string) {
   if (!postingIdSchema.safeParse(id).success || typeof tracked !== 'boolean') fail('INVALID_INPUT', '공고 ID와 등록 여부(true/false)를 확인하세요.');
   return locked(workspace, () => {
     const items = records(workspace);
     const item = items.find(item => item.record.id === id);
     if (!item) fail('POSTING_NOT_FOUND', '해당 공고가 없습니다. posting_list로 ID를 확인하세요.');
+    if (expectedSha !== undefined && item.sha256 !== expectedSha) fail('STALE_POSTING', '공고가 바뀌었습니다. 최신 내용을 확인한 뒤 로컬 달력 등록을 다시 요청하세요.');
     const before = item.record;
     if (!['imported', 'analyzed', 'tracked'].includes(before.status)) fail('INVALID_STATE', '현재 상태에서는 달력 등록을 변경할 수 없습니다.');
     const changed = (before.status === 'tracked') !== tracked;
@@ -117,12 +118,13 @@ export function postingTrack(workspace: Workspace, id: string, tracked: boolean,
       const serialized = JSON.stringify(item.record, null, 2) + '\n';
       if (Buffer.byteLength(serialized) > MAX_TEXT_BYTES) fail('FILE_TOO_LARGE', '변경할 공고 기록이 크기 제한을 넘습니다. 기존 기록을 보존했습니다.');
       replace(workspace, item.file, serialized);
+      item.sha256 = sha256(serialized);
     }
     try {
       writeDashboard(workspace, 'dashboard/index.html', html);
-      return { id, tracked, changed, dashboard_updated: true, path: 'dashboard/index.html' };
+      return { id, tracked, changed, dashboard_updated: true, path: 'dashboard/index.html', posting_sha256: item.sha256 };
     } catch (error) {
-      return { id, tracked, changed, dashboard_updated: false, warning: publicError(error), next_step: '등록 상태는 저장됐습니다. 파일 사용 여부를 확인한 뒤 dashboard_build로 달력을 다시 만드세요.' };
+      return { id, tracked, changed, dashboard_updated: false, posting_sha256: item.sha256, warning: publicError(error), next_step: '등록 상태는 저장됐습니다. 파일 사용 여부를 확인한 뒤 dashboard_build로 달력을 다시 만드세요.' };
     }
   });
 }

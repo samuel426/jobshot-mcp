@@ -1,7 +1,7 @@
 # 구조와 데이터 설계
 
-상태: 4단계 Google 선택 전송 첫 구현. `profile_list`, `profile_read`, `posting_import`, `posting_list`, `posting_track`, `dashboard_build`, `posting_get`, `posting_save_analysis`, `application_save`, `calendar_preview`, `calendar_sync`를 제공한다.
-AI 판단과 문장 작성은 클라이언트가 수행하고 MCP는 평가 구조·자료 버전·인용·배점을 검증한다. Google 실제 계정 검증은 남아 있다. 사용법은 [시작하기](getting-started.md)를 따른다.
+상태: 4단계 Google 선택 전송과 실패 시 로컬 웹 달력 대체 등록. `profile_list`, `profile_read`, `posting_import`, `posting_list`, `posting_track`, `dashboard_build`, `posting_get`, `posting_save_analysis`, `application_save`, `calendar_preview`, `calendar_sync`를 제공한다.
+AI 판단과 문장 작성은 클라이언트가 수행하고 MCP는 평가 구조·자료 버전·인용·배점을 검증한다. 실제 Google 계정의 가상 이벤트 API 검증은 완료했으며 실제 권한 철회·화면 확인은 남아 있다. 사용법은 [시작하기](getting-started.md)를 따른다.
 
 ## 역할 분리
 

@@ -17,7 +17,7 @@ test('real stdio client discovers tools, reads selected material, imports and re
   const source = join(root, '개인 자료', '가상이력서.md');
   writeFileSync(source, '가상 인물의 테스트용 프로젝트 경험');
   const client = new Client({ name: 'jobshot-integration-test', version: '1.0.0' });
-  const transport = new StdioClientTransport({ command: process.execPath, args: [cli, '--workspace', root], stderr: 'pipe' });
+  const transport = new StdioClientTransport({ command: process.execPath, args: [cli, '--workspace', root], stderr: 'pipe', env: { ...process.env, LOCALAPPDATA: join(root, 'synthetic-auth') } });
   let stderr = '';
   transport.stderr?.on('data', chunk => { stderr += chunk.toString(); });
   try {
@@ -39,6 +39,12 @@ test('real stdio client discovers tools, reads selected material, imports and re
     assert.equal(tools.find(tool => tool.name === 'calendar_sync').annotations.openWorldHint, true);
     const staleSync = await client.callTool({ name: 'calendar_sync', arguments: { id: imported.structuredContent.posting.id, posting_sha256: '0'.repeat(64) } });
     assert.equal(staleSync.isError, true); assert.equal(staleSync.structuredContent.error.code, 'STALE_POSTING');
+    const fallback = await client.callTool({ name: 'calendar_sync', arguments: { id: imported.structuredContent.posting.id, posting_sha256: preview.structuredContent.posting_sha256 } });
+    assert.ok(!fallback.isError); assert.equal(fallback.structuredContent.synced, false);
+    assert.ok(['GOOGLE_NOT_CONNECTED', 'GOOGLE_PLATFORM'].includes(fallback.structuredContent.error.code));
+    assert.equal(fallback.structuredContent.local_calendar.tracked, true);
+    assert.equal(fallback.structuredContent.local_calendar.dashboard_updated, true);
+    assert.match(readFileSync(join(root, 'dashboard/index.html'), 'utf8'), /Google 연결 없이도/);
     const again = await client.callTool({ name: 'posting_import', arguments: input() });
     assert.equal(again.structuredContent.duplicate, true);
     const listing = await client.callTool({ name: 'posting_list', arguments: {} });

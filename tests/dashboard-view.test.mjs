@@ -22,6 +22,8 @@ const entry = (date, company = '가상기업', extra = {}) => ({ id: 'a'.repeat(
 
 test('standalone HTML starts on current month, highlights today and navigates December/January', t => {
   const p = page(t, [entry('2026-10-21')]);
+  assert.match(p.window.document.querySelector('.local-notice').textContent, /Google 연결 없이도/);
+  assert.match(p.window.document.querySelector('.local-notice').textContent, /Google 등록이 완료된 것은 아닙니다/);
   assert.equal(p.$('month-title').textContent, '2026년 10월');
   assert.equal(p.window.document.querySelector('[aria-current=date]').parentElement.dataset.date, '2026-10-21');
   p.$('next').click(); assert.equal(p.$('month-title').textContent, '2026년 11월');
