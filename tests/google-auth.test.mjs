@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { GoogleAuthStore, GOOGLE_SCOPE, connectGoogle, disconnectGoogle, recoverCalendar, connectedAPI, startAuthorization, windowsProtector } from '../dist/google-auth.js';
+import { GoogleAuthStore, GOOGLE_SCOPE, connectGoogle, disconnectGoogle, recoverCalendar, connectedAPI, startAuthorization, windowsProtector, googleAuthDirectory } from '../dist/google-auth.js';
 import { GoogleHttpError, googleRequest } from '../dist/google-http.js';
 import { fixture, projectRoot } from './helpers.mjs';
 
@@ -14,6 +14,60 @@ const protector = { seal: value => Buffer.from(value).toString('base64'), open: 
 const credentials = { installed: { client_id: 'synthetic.apps.googleusercontent.com', client_secret: 'synthetic-client-secret', token_uri: 'https://ignored.invalid/token' } };
 const authorization = async () => ({ url: 'https://accounts.google.com/synthetic', code: Promise.resolve('synthetic-code'), verifier: 'v'.repeat(43), redirectUri: 'http://127.0.0.1:45678/oauth/callback', close() {} });
 const json = value => new Response(JSON.stringify(value), { headers: { 'Content-Type': 'application/json' } });
+
+test('explicit auth home survives changing runtime appdata and rejects invalid paths', t => {
+  const f = fixture(t); const home = join(f.root, 'persistent');
+  const first = googleAuthDirectory(f.workspace, { JOBSHOT_AUTH_HOME: home, LOCALAPPDATA: join(f.root, 'session-a') });
+  assert.equal(first, googleAuthDirectory(f.workspace, { JOBSHOT_AUTH_HOME: home, LOCALAPPDATA: join(f.root, 'session-b') }));
+  assert.equal(first, join(home, createHash('sha256').update(f.workspace.root).digest('hex')));
+  assert.equal(googleAuthDirectory(f.workspace, { LOCALAPPDATA: f.root }), join(f.root, 'JobShot', 'google-auth', createHash('sha256').update(f.workspace.root).digest('hex')));
+  for (const value of ['', 'relative/path']) assert.throws(() => googleAuthDirectory(f.workspace, { JOBSHOT_AUTH_HOME: value, LOCALAPPDATA: f.root }), code('INVALID_PATH'));
+  assert.throws(() => googleAuthDirectory(f.workspace, {}), code('INVALID_PATH'));
+});
+
+test('missing connection can reconnect only to an explicitly supplied existing JobShot calendar without remote writes', async t => {
+  const f = fixtureAuth(t); const id = 'synthetic@group.calendar.google.com'; const mark = 'a'.repeat(32);
+  const calls = [];
+  const send = async (url, options) => {
+    calls.push({ url, method: options.method });
+    if (url.endsWith('/token')) return f.send(url, options);
+    assert.equal(options.method, 'GET');
+    return json({ id, description: `JobShot 전용 지원 일정 · 연결 ID ${mark}` });
+  };
+  const result = await connectGoogle(f.store, credentials, () => {}, send, authorization, id);
+  assert.equal(result.connected, true); assert.equal(result.created, false);
+  assert.equal(f.store.load().calendar_marker, mark); assert.equal(f.store.load().calendar_id, id);
+  assert.equal(calls.length, 2); assert.ok(!calls.some(c => c.url.includes('/events')));
+  const before = readFileSync(join(f.root, 'auth/connection.bin'));
+  await assert.rejects(connectGoogle(f.store, credentials, () => {}, send, authorization, id), code('GOOGLE_RECOVERY'));
+  assert.deepEqual(readFileSync(join(f.root, 'auth/connection.bin')), before);
+  assert.equal(calls.length, 2);
+});
+
+test('existing-calendar recovery rejects invalid IDs, inaccessible or unmarked targets without saving or creating', async t => {
+  const f = fixtureAuth(t); const id = 'synthetic@group.calendar.google.com';
+  let requests = 0;
+  const forbidden = async () => { requests++; throw new Error('Must not authorize'); };
+  for (const invalid of ['', 'primary', 'personal@example.com', 'bad\n@group.calendar.google.com'])
+    await assert.rejects(connectGoogle(f.store, credentials, () => {}, f.send, forbidden, invalid), code('INVALID_INPUT'));
+  assert.equal(requests, 0);
+  const scenarios = [
+    [() => new Response('', { status: 403 }), 'GOOGLE_AUTH'],
+    [() => new Response('', { status: 404 }), 'GOOGLE_NOT_FOUND'],
+    [() => json({ id: 'wrong', description: 'JobShot 전용 지원 일정 · 연결 ID ' + 'a'.repeat(32) }), 'GOOGLE_RESPONSE'],
+    [() => json({ id, description: 'personal calendar' }), 'GOOGLE_RECOVERY'],
+    [() => json({ id, description: 123 }), 'GOOGLE_RECOVERY'],
+    [() => { throw new Error('private transport detail'); }, 'GOOGLE_NETWORK'],
+  ];
+  for (const [reply, expected] of scenarios) {
+    const send = async (url, options) => {
+      if (url.endsWith('/token')) return f.send(url, options);
+      assert.equal(options.method, 'GET'); return reply();
+    };
+    await assert.rejects(connectGoogle(f.store, credentials, () => {}, send, authorization, id), code(expected));
+    assert.equal(f.store.load(), null);
+  }
+});
 function fixtureAuth(t) {
   const f = fixture(t); const store = new GoogleAuthStore(f.workspace, join(f.root, 'auth'), protector);
   const calls = []; let calendar = null;

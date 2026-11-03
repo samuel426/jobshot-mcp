@@ -28,6 +28,7 @@
 - 2026-10-26 (4단계 첫 구현): 전용 Google 캘린더 사용 결정에 따라 Windows OAuth 연결, 전송 미리보기·선택 등록·갱신, 중복·실패·충돌 처리를 구현했다. 이 시점에는 가상 응답만 검증했으며 이후 실제 계정 검증은 아래 기록을 따른다.
 - 2026-10-31: 실제 Windows 계정 동의·전용 캘린더 생성 완료. 사용자 승인으로 가상 일정 1개의 등록·재조회·중복 방지·날짜 변경·외부 수정 충돌·해결·삭제 후 재생성 방지를 확인했다. 테스트 일정 정리 완료. 실사용에서 겪은 인증 만료를 개선해 대기 10분·별도 시간 초과 오류·새 주소 재시도 안내를 추가했다. 전체 테스트 73개 통과. 현재 대화의 가상 자료용 MCP에서는 미리보기·미연결 실패 경로만 직접 검증했으며 실사용 MCP 설정, 실제 권한 철회·화면 표시와 배포 검증은 남아 있다.
 - 5단계: 미착수.
+- 2026-11-03: PR #18 병합 후 현재 대화의 새 MCP 계약과 Google 미연결 시 가상 공고의 로컬 대체 등록·반복 호출·원본 보존을 확인했다. 재시작 후 인증 파일을 찾지 못해 [이슈 #19](https://github.com/samuel426/jobshot-mcp/issues/19)에서 영구 저장소 지정과 기존 전용 캘린더 재연결을 추가했다. Windows 83개 테스트 통과. 실제 계정 복구 결과는 [작업 기록](work-log/2026-11-03.md)을 따른다.
 - 2026-11-01: 사용자 병합 후 PR #16의 merge commit `4c37533`을 확인했다. [이슈 #17](https://github.com/samuel426/jobshot-mcp/issues/17)에서 Google 실패·충돌 시 로컬 웹 달력 자동 등록을 추가했다. 제품 요구사항·결과 안내·중복/동시 변경/부분 저장 방어를 반영하고 Windows 전체 테스트 80개를 통과했다. 프로젝트 MCP를 기존 Google 연결 작업 폴더로 전환해 설정 적용·새 stdio 도구 계약·Google 캘린더 읽기 접근을 확인했다. 현재 대화 재연결 후 직접 호출은 남아 있다.
 - 후속 이슈: [공고 입력 #2](https://github.com/samuel426/jobshot-mcp/issues/2), [HTML 달력 #3](https://github.com/samuel426/jobshot-mcp/issues/3), [서류·평가 #4](https://github.com/samuel426/jobshot-mcp/issues/4), [Google 연동 #5](https://github.com/samuel426/jobshot-mcp/issues/5), [배포·검증 #6](https://github.com/samuel426/jobshot-mcp/issues/6).
 

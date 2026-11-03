@@ -132,9 +132,33 @@ node dist/google-cli.js --workspace "C:\JobShot" --recover-calendar "확인한 �
 
 저장된 무작위 연결 표식이 맞는 캘린더만 복구한다. 생성된 캘린더를 찾지 못하면 확인 없이 연결 파일을 지우거나 재생성하지 않는다.
 
+로컬 인증 파일 자체가 없지만 기존 JobShot 캘린더가 남아 있다면, 일반 `--connect`는 새 캘린더를 만들 수 있다. Google 캘린더 설정에서 기존 전용 캘린더 ID를 확인하고 새 브라우저 동의로 재연결한다.
+
+```powershell
+node dist/google-cli.js --workspace "C:\JobShot" --connect-existing "C:\JobShotAuth\client_secret_jobshot.json" "확인한 기존 JobShot 캘린더 ID"
+```
+
+이 명령은 지정한 보조 캘린더를 조회하고 ID·JobShot 표식을 확인한 뒤에만 인증을 저장한다. 캘린더나 이벤트를 생성·수정하지 않는다. 기존 연결 파일이 있으면 덮어쓰지 않고 기존 복구 명령을 안내한다. 파일이 없으므로 원래 작업 폴더의 연결 표식을 대조할 수는 없다. 사용자가 지정한 캘린더 ID와 앱 전용 권한·원격 표식을 확인하는 복구이며 일반 개인 캘린더 선택 기능은 아니다.
+
 ## 인증 보관과 해제
 
 인증 정보는 기본적으로 `%LOCALAPPDATA%\JobShot\google-auth\<작업폴더 해시>\connection.bin`에 Windows 현재 사용자 DPAPI로 보호해 저장한다.
+실행 환경이 `LOCALAPPDATA`를 임시 폴더로 바꾼다면 CLI와 MCP 양쪽에 같은 `JOBSHOT_AUTH_HOME` 절대 경로를 지정한다. 값은 작업폴더 해시의 상위 폴더이며 비밀 값이 아니다. 기존 파일을 자동 검색·이동하지 않으며 상대 경로·링크·정션 저장소는 거부한다.
+
+```powershell
+$env:JOBSHOT_AUTH_HOME = 'C:\Users\사용자\AppData\Local\JobShot\google-auth'
+node dist/google-cli.js --workspace "C:\JobShot" --status
+```
+
+Codex 프로젝트 설정 예시(실제 Windows 사용자 경로로 변경):
+
+```toml
+[mcp_servers.jobshot.env]
+JOBSHOT_AUTH_HOME = "C:/Users/사용자/AppData/Local/JobShot/google-auth"
+```
+
+설정을 바꾼 뒤 MCP 서버를 재시작한다. 서버별 `env`와 재시작은 [공식 MCP 설정 안내](https://learn.chatgpt.com/docs/extend/mcp)를 따른다. 재시작 후 같은 저장소가 선택되는지 확인하며 `--status`만으로 실제 Google 접근 성공을 단정하지 않는다.
+
 OAuth 클라이언트 정보·access/refresh token을 평문 JSON으로 프로젝트에 쓰지 않는다. 별도 인증 저장소로 OneDrive 작업 폴더와 분리한다.
 DPAPI는 같은 Windows 사용자로 실행되는 다른 프로그램까지 차단하는 장치가 아니다. Windows 사용자·기기·작업 폴더를 옮긴 경우 재연결이 필요할 수 있다.
 macOS/Linux의 인증 저장소는 아직 구현하지 않았다. 해당 환경의 테스트 통과는 실계정 지원을 뜻하지 않는다.
@@ -155,6 +179,8 @@ node dist/google-cli.js --workspace "C:\JobShot" --disconnect
 정리에는 Google의 [이벤트 삭제 API](https://developers.google.com/workspace/calendar/api/v3/reference/events/delete)를 사용했다.
 
 2026-10-31 대화의 가상 자료용 MCP에서 미리보기 성공·날짜 미정 거부·미연결 오류를 직접 확인했다.
-당시 MCP 작업 폴더와 실제 계정을 연결한 작업 폴더는 달랐다. 2026-11-01 프로젝트 MCP 설정을 실사용 폴더로 전환하고 stdio 도구 발견과 기존 Google 캘린더 읽기 접근을 확인했다. 현재 대화에는 재연결 후 반영을 확인해야 한다. 현재 대화의 `calendar_sync` 성공으로 기록하지 않으며,
+당시 MCP 작업 폴더와 실제 계정을 연결한 작업 폴더는 달랐다. 2026-11-01 프로젝트 MCP 설정을 실사용 폴더로 전환하고 stdio 도구 발견과 기존 Google 캘린더 읽기 접근을 확인했다. 당시 현재 대화의 반영 확인은 재연결 후로 남겼다. 이를 현재 대화의 `calendar_sync` 성공으로 기록하지 않으며,
 실사용 MCP는 연결 CLI의 `--workspace`와 같은 작업 폴더를 가리켜야 한다. 인증 파일을 다른 작업 폴더로 복사하지 않는다.
 실제 Google 화면의 이벤트 렌더링·권한 철회·공개 배포 심사 및 Windows 외 인증 저장소는 미검증이다.
+
+2026-11-03 현재 대화에서 실사용 MCP 계약과 Google 미연결 시 가상 공고의 로컬 대체 등록·중복 방지를 확인했다. 이후 사용자가 새 동의로 기존 전용 캘린더 연결을 복구했고 생성 없이 GET 접근에 성공했다. 저장 경로를 고정했으며 현재 대화 MCP의 해당 설정 적용을 위한 서버 재시작은 남아 있다. [당일 작업 기록](work-log/2026-11-03.md)을 따른다.
