@@ -14,7 +14,7 @@
 
 ## 진행 상태
 
-현재 요약(2026-11-04): 핵심 기능 구현과 #4 서류 검증 기록(PR #21)은 병합됐다. #5 Google 실제 MCP·화면·제품 해제 및 토큰 철회·재연결 검증도 PR #22 병합으로 마무리했다. #3은 Windows Chrome에서 월 이동·오늘·원문 링크, CSP 6개 차단과 320/390/768/1440픽셀 화면을 확인했다. 좁은 화면의 버튼 줄바꿈 문제를 고치고 가로 스크롤·키보드 안내를 추가해 PR로 제출한다. 루프백 HTTP·너비 모사 결과이며 파일 직접 열기·휴대전화 실기기 검증과 구분한다. 다음은 #6 배포 준비다. #4의 플랫폼별 글자 수 대조는 대상 플랫폼이 정해지면 수행한다. 날짜별 기록은 당시 상태이며 최신 결과와 검증 한계는 [2026-11-04 기록](work-log/2026-11-04.md)을 따른다.
+현재 요약(2026-11-04): 핵심 기능과 #4 서류 흐름 기록(PR #21), #5 Google 실제 전송·해제·철회·재연결(PR #22), #3 로컬 달력 브라우저 검증(PR #23)은 병합됐다. 사용자 요청으로 [UI 개편 #24](https://github.com/samuel426/jobshot-mcp/issues/24)를 진행해 장식을 줄인 지원 달력과 0.5.0-dev.1 개발 버전을 준비했다. Windows Chrome의 320/390/768/1440픽셀, 빈 달력·월 이동·오늘·원문 링크·CSP를 확인했다. 다음은 #6 배포 준비다. #4의 플랫폼별 글자 수 대조는 대상 플랫폼이 정해지면 수행한다. 최신 결과와 검증 한계는 [2026-11-04 기록](work-log/2026-11-04.md)과 [개발 버전 안내](releases/0.5.0-dev.1.md)를 따른다.
 
 - [0단계 이슈 #1](https://github.com/samuel426/jobshot-mcp/issues/1): 완료. [PR #7](https://github.com/samuel426/jobshot-mcp/pull/7) 병합 확인.
 - 1단계: [첫 구현 PR #8](https://github.com/samuel426/jobshot-mcp/pull/8) 병합 확인. 개인 자료 조회·이미지 원본 저장·stdio 테스트 완료.
@@ -34,7 +34,7 @@
 - 2026-11-01: 사용자 병합 후 PR #16의 merge commit `4c37533`을 확인했다. [이슈 #17](https://github.com/samuel426/jobshot-mcp/issues/17)에서 Google 실패·충돌 시 로컬 웹 달력 자동 등록을 추가했다. 제품 요구사항·결과 안내·중복/동시 변경/부분 저장 방어를 반영하고 Windows 전체 테스트 80개를 통과했다. 프로젝트 MCP를 기존 Google 연결 작업 폴더로 전환해 설정 적용·새 stdio 도구 계약·Google 캘린더 읽기 접근을 확인했다. 현재 대화 재연결 후 직접 호출은 남아 있다.
 - 후속 이슈: [공고 입력 #2](https://github.com/samuel426/jobshot-mcp/issues/2), [HTML 달력 #3](https://github.com/samuel426/jobshot-mcp/issues/3), [서류·평가 #4](https://github.com/samuel426/jobshot-mcp/issues/4), [Google 연동 #5](https://github.com/samuel426/jobshot-mcp/issues/5), [배포·검증 #6](https://github.com/samuel426/jobshot-mcp/issues/6).
 
-## 현재 작업: 로컬 달력 브라우저 검증과 후속 배포 준비
+## 현재 작업: 달력 UI 개편과 후속 배포 준비
 
 새 공고 입력 시 원본을 보존하고 긴 이미지를 겹침·좌표가 있는 PNG 조각으로 저장한다.
 Windows 캡처 CLI → inbox 파일 → MCP 원본·분할본 저장 경로를 제공한다.

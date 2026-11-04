@@ -75,12 +75,20 @@ export function mountDashboard() {
     if (date.getUTCFullYear() < 1900 || date.getUTCFullYear() > 2199) return;
     year = date.getUTCFullYear(); month = date.getUTCMonth() + 1; render();
   }
+  function revealToday() {
+    const scroller = document.querySelector<HTMLElement>('.scroll');
+    const cell = document.querySelector<HTMLElement>('.day.today');
+    if (!scroller || !cell || scroller.scrollWidth <= scroller.clientWidth) return;
+    const left = cell.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft;
+    scroller.scrollLeft = Math.max(0, left - (scroller.clientWidth - cell.clientWidth) / 2);
+  }
   $('prev').addEventListener('click', () => shift(-1));
   $('next').addEventListener('click', () => shift(1));
-  $('today').addEventListener('click', () => { today = todayKey(new Date()); year = Number(today.slice(0, 4)); month = Number(today.slice(5, 7)); render(); });
+  $('today').addEventListener('click', () => { today = todayKey(new Date()); year = Number(today.slice(0, 4)); month = Number(today.slice(5, 7)); render(); revealToday(); });
   function refresh() { const key = todayKey(new Date()); if (key !== today) { today = key; render(); } }
   window.addEventListener('focus', refresh);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
   setInterval(refresh, 1000);
   render();
+  revealToday();
 }

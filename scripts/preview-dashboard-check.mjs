@@ -17,9 +17,12 @@ const sink = createServer((req, res) => {
 await listen(sink);
 const blockedOrigin = `http://127.0.0.1:${sink.address().port}`;
 let html, probe;
+const empty = renderDashboard([]);
 const server = createServer((req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  if (req.url === '/' || req.url === '/index.html' || req.url === '/csp.html') {
+  if (req.url === '/empty.html') {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.end(empty);
+  } else if (req.url === '/' || req.url === '/index.html' || req.url === '/csp.html') {
     res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.end(req.url === '/csp.html' ? probe : html);
   } else if (req.url === '/posting/example') {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -70,6 +73,6 @@ const output = resolve('tmp/dashboard-browser-check'); mkdirSync(output, { recur
 writeFileSync(resolve(output, 'index.html'), html);
 writeFileSync(resolve(output, 'csp.html'), probe);
 writeFileSync(resolve(output, 'session.json'), JSON.stringify({ origin, blockedOrigin, today, entries: entries.length }, null, 2));
-console.log(JSON.stringify({ preview: origin, csp: `${origin}/csp.html`, results: `${origin}/results`, output, today }));
+console.log(JSON.stringify({ preview: origin, empty: `${origin}/empty.html`, csp: `${origin}/csp.html`, results: `${origin}/results`, output, today }));
 function close() { server.close(); sink.close(); }
 process.on('SIGINT', close); process.on('SIGTERM', close);
