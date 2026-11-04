@@ -3,7 +3,7 @@
 채용공고 캡처를 지원 일정과 나만의 취업 준비 계획으로 바꾸는 개인용 MCP 프로젝트.
 
 > 현재 개발 버전: **0.5.0-dev.1** — 일정 중심으로 정리한 로컬 달력 UI.
-> Windows·Codex 입력·서류 흐름, Google 전송·연결 해제·재연결과 로컬 대체 등록을 가상 자료로 확인했습니다. 새 환경 설치와 공개 배포 검증은 다음 단계입니다. [변경 내역과 적용 방법](docs/releases/0.5.0-dev.1.md)을 확인하세요.
+> Windows·Codex 입력·서류 흐름, Google 전송·연결 해제·재연결과 로컬 대체 등록을 가상 자료로 확인했습니다. 새 복제본 설치·MCP 검사를 진행했으며 다른 사용자 PC와 공개 배포 검증은 남아 있습니다. [변경 내역과 적용 방법](docs/releases/0.5.0-dev.1.md)을 확인하세요.
 
 ## 목표하는 경험
 
@@ -33,7 +33,7 @@ npm run build
 node dist/cli.js --help
 ```
 
-[설치·MCP 연결·공고 입력 안내](docs/getting-started.md)를 따라 연결하세요.
+[설치·MCP 연결·공고 입력 안내](docs/getting-started.md)를 따라 연결하세요. 배포 준비 상태는 [검증 범위와 남은 조건](docs/release-readiness.md), 실제 자료 없는 체험은 [가상 자료 첫 사용](docs/first-use-preview.md)을 참고하세요.
 현재 도구는 `profile_list`, `profile_read`, `posting_import`, `posting_list`, `posting_track`, `dashboard_build`, `posting_get`, `posting_save_analysis`, `application_save`, `calendar_preview`, `calendar_sync` 열한 가지입니다.
 개인 자료는 UTF-8 TXT·MD·JSON, 공고 원본은 PNG·JPEG·WebP 한 장을 지원합니다.
 프로젝트 폴더의 `inbox/`에 이미지를 저장하면 공고별 폴더에 원본 그대로 보관하고 긴 이미지는 별도로 분할합니다.
@@ -66,5 +66,6 @@ GitHub Actions에서도 Windows와 Linux에 같은 검사를 실행합니다.
 
 ## 공개 및 라이선스 상태
 
-오픈소스 배포를 목표로 준비 중입니다. 라이선스는 아직 확정하지 않았으며,
-첫 배포 전에 결정합니다. 현재 공개된 저장소를 정식 배포판으로 안내하지 않습니다.
+JobShot 소스는 [MIT 라이선스](LICENSE)로 제공합니다. 의존성은 각자의 라이선스를 따릅니다.
+Windows·Codex용 소스 설치형 미리보기 배포를 준비 중이며, 현재 저장소를 정식 배포판으로 안내하지 않습니다.
+[배포 준비와 지원 한계](docs/release-readiness.md)를 확인하세요.
