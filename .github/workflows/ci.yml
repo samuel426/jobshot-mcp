@@ -26,3 +26,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npm run check:release
+      - run: node scripts/dependency-inventory.mjs --check
