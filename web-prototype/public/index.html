@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow"><meta name="description" content="JobShot 지원 일정 관리자 화면의 가상 데이터 프로토타입">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>지원 달력 · JobShot</title><link rel="stylesheet" href="/styles.css"><script src="/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">본문으로 이동</a>
+<aside class="sidebar">
+  <a class="brand" href="#calendar">JobShot<span class="brand-dot">.</span></a>
+  <div class="workspace"><span class="workspace-mark">J</span><div>내 작업공간<small>관리자 미리보기</small></div></div>
+  <nav aria-label="주 메뉴">
+    <a href="#calendar" data-page="calendar"><span aria-hidden="true">▦</span> 지원 달력</a>
+    <a href="#postings" data-page="postings"><span aria-hidden="true">▤</span> 공고 보관함 <span class="nav-count">6</span></a>
+    <a href="#documents" data-page="documents"><span aria-hidden="true">≡</span> 지원 서류</a>
+    <a href="#settings" data-page="settings"><span aria-hidden="true">⚙</span> 관리 설정</a>
+  </nav>
+  <div class="sidebar-bottom"><p>한 번의 캡처에서,<br>다음 지원까지.</p><div class="account"><span class="avatar">관</span><div>관리자<small>가상 관리자 모드</small></div></div></div>
+</aside>
+<div class="shell">
+  <header class="topbar"><span id="breadcrumb">내 작업공간 / 지원 달력</span><span class="prototype-label"><span aria-hidden="true">○</span> 프로토타입</span></header>
+  <main id="main" tabindex="-1">
+    <div class="page-heading"><div><p class="eyebrow">나의 취업 준비</p><h1 id="page-title">지원 달력</h1><p class="subtitle" id="page-subtitle">놓치지 않도록, 다음 마감부터 확인하세요.</p></div><button class="primary" id="add-posting">＋ 공고 추가</button></div>
+    <div class="demo-note">가상 공고와 서류로 구성된 화면입니다. 실제 저장·전송은 이루어지지 않습니다.</div>
+    <section id="calendar-page" class="page">
+      <dl class="metrics"><div><dt>보관한 공고</dt><dd>6 <small>개</small></dd></div><div><dt>7일 이내 마감</dt><dd id="soon-count">3 <small>개</small></dd></div><div><dt>작성 중인 서류</dt><dd>2 <small>개</small></dd></div><div><dt>날짜 미정</dt><dd>1 <small>개</small></dd></div></dl>
+      <div class="calendar-layout"><section class="calendar-panel" aria-label="지원 일정">
+        <div class="calendar-toolbar"><div class="month-heading"><h2 id="month-title"></h2><div class="month-controls"><button id="previous-month" aria-label="이전 달">‹</button><button id="next-month" aria-label="다음 달">›</button><button id="today">오늘</button></div></div><div class="view-switch" aria-label="달력 보기 방식"><button id="month-view" aria-pressed="true">월간</button><button id="list-view" aria-pressed="false">목록</button></div></div>
+        <div class="calendar-scroll" tabindex="0" role="region" aria-label="월간 달력"><div class="weekdays" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div><div id="calendar-grid"></div></div>
+        <div id="calendar-list" class="schedule-list" hidden></div>
+        <div class="calendar-foot"><span><i class="legend-dot"></i> 지원 마감</span><span>한국 시간 · 날짜만 표시</span></div>
+      </section><aside class="upcoming"><div class="section-heading"><h2>다가오는 마감</h2><span>7일 이내</span></div><div id="upcoming-list"></div><div class="quiet-note"><span class="note-number">01</span><p>마감이 가까운 공고부터<br>서류를 준비해 보세요.</p></div><div class="section-heading undated-heading"><h2>날짜 미정</h2><span>1개</span></div><button class="undated-item" data-posting="5"><strong>가상 포레스트랩</strong><span>제품 디자이너</span><small>마감일 확인 필요 →</small></button></aside></div>
+    </section>
+    <section id="postings-page" class="page" hidden><div class="list-toolbar"><label class="search"><span aria-hidden="true">⌕</span><input id="posting-search" type="search" placeholder="기업명이나 직무 검색" aria-label="기업명이나 직무 검색"></label><span>전체 6개</span></div><div id="posting-list"></div></section>
+    <section id="documents-page" class="page" hidden><div class="document-layout"><div class="document-menu"><p class="section-label">작성 중인 서류</p><button class="doc-item selected" data-document="essay"><span>자기소개서</span><strong>가상 오로라테크</strong><small>백엔드 개발 · 초안 v2</small></button><button class="doc-item" data-document="resume"><span>이력서</span><strong>가상 모노스튜디오</strong><small>프론트엔드 개발 · 초안 v1</small></button></div><article id="document-content" class="paper"></article></div></section>
+    <section id="settings-page" class="page" hidden><div class="settings-content"><section><h2>작업공간</h2><dl class="settings-list"><div><dt>이름</dt><dd>내 작업공간</dd></div><div><dt>화면 역할</dt><dd>관리자 <span class="status">가상 모드</span></dd></div><div><dt>표시 기준</dt><dd>한국 시간 · 월간 달력</dd></div></dl></section><section><h2>캘린더 연결</h2><div class="integration"><div class="integration-icon">G</div><div><strong>Google Calendar</strong><p>연결되지 않음</p></div><button data-demo="Google 연결은 프로토타입에 포함되지 않습니다.">연결 미리보기</button></div><p class="muted">이 화면의 일정은 모두 가상 예시입니다.</p></section><section><h2>이 프로토타입에 대해</h2><p class="muted">지원 일정, 공고 보관, 서류 평가의 화면 흐름을 살펴볼 수 있습니다. 계정 로그인, 자료 업로드, AI 평가와 일정 전송은 제공하지 않습니다.</p><p class="muted">비밀번호나 실제 개인 자료를 입력하지 않아도 모든 화면을 볼 수 있습니다.</p></section></div></section>
+    <footer>JobShot <span>나의 지원을 차근차근.</span><span class="footer-mode">웹 프로토타입 · 가상 데이터</span></footer>
+  </main>
+</div>
+<dialog id="detail-dialog" aria-labelledby="detail-title"><div class="dialog-top"><span>공고 미리보기</span><button class="icon-button" id="close-detail" aria-label="공고 미리보기 닫기">×</button></div><div id="detail-content"></div></dialog>
+<dialog id="add-dialog" aria-labelledby="add-title"><div class="dialog-top"><span>새 공고</span><button class="icon-button" id="close-add" aria-label="공고 추가 닫기">×</button></div><h2 id="add-title">캡처 한 장으로 시작하기</h2><p class="muted">공고 이미지를 보관하고, 마감일과 준비할 서류를 한곳에서 확인하는 흐름입니다.</p><div class="upload-placeholder"><span aria-hidden="true">＋</span><strong>공고 캡처를 놓는 공간</strong><p>화면 예시 · 파일을 받지 않습니다</p></div><p class="muted">지금은 보관함의 가상 공고로 화면을 둘러볼 수 있습니다.</p><button class="primary" id="browse-demo">가상 공고 둘러보기 →</button></dialog>
+<div class="toast" id="toast" role="status" hidden></div>
+</body></html>

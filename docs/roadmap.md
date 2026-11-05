@@ -36,6 +36,10 @@
 
 ## 현재 작업: Windows·Codex 미리보기 배포 준비
 
+추가 요청: PR #26 병합 후 별도 `codex/vercel-prototype` 브랜치에서 [Vercel용 웹 프로토타입 #27](https://github.com/samuel426/jobshot-mcp/issues/27)을 준비한다. 사용자 Vercel 계정이 배포를 소유하고 화면은 가상 관리자 모드다. 실제 개인 자료·백엔드·비밀번호는 포함하지 않는다. [웹 버전 안내](../web-prototype/README.md)를 따른다.
+
+2026-11-06: [정적 웹 프로토타입](https://jobshot-web-prototype.vercel.app)을 사용자 Vercel 프로젝트에 배포하고 공개 접속·PC/모바일 화면을 확인했다. [작업 기록](work-log/2026-11-06.md)에 범위와 검증을 정리했다. 로컬 MCP의 공개 릴리스나 실서비스 백엔드 배포와는 별개다.
+
 새 공고 입력 시 원본을 보존하고 긴 이미지를 겹침·좌표가 있는 PNG 조각으로 저장한다.
 Windows 캡처 CLI → inbox 파일 → MCP 원본·분할본 저장 경로를 제공한다.
 사용자가 첨부한 가상 공고로 Windows 실제 클립보드와 Codex 첨부 파일 전달을 확인했다.
