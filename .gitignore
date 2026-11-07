@@ -27,6 +27,7 @@ connection.bin
 
 # Dependencies, build output and diagnostics
 node_modules/
+.vercel/
 dist/
 coverage/
 *.log
