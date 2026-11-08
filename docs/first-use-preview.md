@@ -2,6 +2,8 @@
 
 실제 이력서나 Google 계정 없이 설치·입력·달력·평가 흐름을 확인한다. 먼저 [배포 준비 안내](release-readiness.md)에 따라 설치하고 `npm run check:release`를 실행한다.
 
+첫 미리보기의 기본 체험은 이 로컬 경로다. Google Cloud 프로젝트·OAuth JSON 준비는 필요 없다. Google 선택 연결은 로컬 첫 사용을 마친 뒤 [연결 안내](google-calendar.md)에서 별도로 진행하며, 샘플 작업 폴더에 실제 계정을 연결하지 않는다.
+
 ## 자료와 MCP 연결
 
 명령에 출력된 `tmp/release-smoke-*` 폴더에 다음 자료가 있다.

@@ -22,6 +22,8 @@ AI에 전달되는 자료는 사용자가 선택한 AI 서비스에서 처리됩
 
 ## 지금 시작할 수 있는 것
 
+첫 Windows·Codex 미리보기는 **Google 계정 연결 없이 로컬 달력으로 시작**합니다. 공고 보관·분석·서류 작성에 Google Cloud 설정은 필요 없습니다. 로컬 일정도 사용자가 등록을 요청한 공고만 표시합니다. Google 전송이 필요할 때만 본인 프로젝트의 [Desktop OAuth 설정](docs/google-calendar.md)을 선택 연결합니다. 공용 JobShot OAuth 앱은 제공하지 않습니다.
+
 ```sh
 git clone https://github.com/samuel426/jobshot-mcp.git
 cd jobshot-mcp
