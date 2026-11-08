@@ -2,6 +2,8 @@
 
 `node scripts/dependency-inventory.mjs`로 package-lock.json에서 재생성한다. `--check`는 저장된 목록의 최신성을 검사한다.
 
+설치된 고지 파일의 추가 조건·Windows 네이티브 구성요소와 현재 소스 배포 범위는 [제3자 의존성 안내](third-party-notices.md)에 기록한다. 아래 선언 문자열은 잠금 파일 값을 그대로 표시한다.
+
 모든 OS의 선택 의존성과 개발 의존성을 포함한 잠금 항목 목록이다. 설치된 패키지 수와 다를 수 있다. 라이선스 선언만으로 배포 의무 검토를 완료했다고 판단하지 않는다. 특히 sharp/libvips에 포함된 네이티브 라이브러리는 별도 확인이 필요하다. [배포 준비 안내](release-readiness.md)를 따른다.
 
 총 108개 항목. 누락 선언 0개.
