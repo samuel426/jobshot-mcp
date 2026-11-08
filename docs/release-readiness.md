@@ -15,7 +15,7 @@
 | macOS | 지원 코드와 경로 예시만 있음 | 실기기 파일 입력·한글 경로·클라이언트 연결 |
 | Claude Code | 연결 예시만 있음 | 실제 첨부 파일 접근·MCP 호출 |
 | 모바일 달력 | Chrome에서 320/390px 너비 모사 | iPhone/Android 터치·가로 이동·링크 확인 |
-| Google 인증 | Windows DPAPI 및 실제 계정 흐름 | 공개용 OAuth 프로젝트 검토, 다른 OS 인증 저장소는 미구현 |
+| Google 선택 연결 | 개인 Desktop OAuth·Windows DPAPI 및 실제 계정 흐름 | 다른 사용자 개인 설정 재현성. 공용 OAuth 앱과 다른 OS 인증 저장소는 후속 범위 |
 
 ## 설치와 첫 사용 확인
 
@@ -58,13 +58,15 @@ npm run check:release
 
 2026-11-08 소스 설치형 의존성 고지 정리를 [제3자 의존성 안내](third-party-notices.md)에 완료했다. MCP SDK의 실제 LICENSE에는 패키지 선언 외에 MIT 전환 고지와 문서 CC-BY-4.0 조건이 있다. 네이티브 라이브러리 29개의 상위 고지·버전도 기록했다. 실행 파일 묶음의 조건 검토는 배포 형태를 바꿀 때 진행한다.
 
-## Google OAuth 공개 전 조건
+## 첫 미리보기의 Google 제공 방식
 
-2026-11-05 공식 문서를 확인했다. 현재 구현은 Desktop app OAuth와 `calendar.app.created` 권한으로 전용 보조 캘린더를 사용한다. [Calendar 권한 설명](https://developers.google.com/workspace/calendar/api/auth), [Desktop OAuth 안내](https://developers.google.com/identity/protocols/oauth2/native-app)를 따른다. CalDAV API 활성화만으로 이 구현의 Calendar API 설정을 대체하지 않는다.
+2026-11-08 사용자 결정으로 **로컬 달력이 기본, Google은 각자 OAuth 설정으로 선택 연결**한다. 로컬 기능 설치에 OAuth JSON은 필요 없고, 사용자가 선택한 공고만 로컬 등록한다. 이 결정은 기존 인증·전용 캘린더와 Google 실패 시 로컬 대체 동작을 바꾸지 않는다. [연결 안내](google-calendar.md)의 개인 프로젝트 절차를 선택 제공한다.
 
-외부 앱의 Testing 상태는 테스트 사용자 목록(최대 100명)으로 제한되고, 이 캘린더 권한을 사용하는 refresh token은 7일 후 만료될 수 있다. Production 전환을 무기한 토큰 보장으로 안내하지 않는다. 사용자 철회 등 다른 만료 사유도 있다. [앱 상태](https://developers.google.com/identity/protocols/oauth2/production-readiness/overview), [토큰 만료 조건](https://developers.google.com/identity/protocols/oauth2/#expiration)을 따른다.
+2026-11-08 공식 문서를 재확인했다. 현재 구현은 Desktop app OAuth와 `calendar.app.created` 권한으로 전용 보조 캘린더를 사용한다. [Calendar 권한 설명](https://developers.google.com/workspace/calendar/api/auth), [Desktop OAuth 안내](https://developers.google.com/identity/protocols/oauth2/native-app)를 따른다. CalDAV API 활성화만으로 이 구현의 Calendar API 설정을 대체하지 않는다.
 
-공용 OAuth 앱으로 배포하려면 개발/운영 프로젝트 분리, 브랜드·연락처·홈페이지·개인정보 안내, 실제 요청 권한과 콘솔의 검증 상태를 확인해야 한다. 선택 권한의 검증 필요 여부를 추측하지 않고 배포 시 콘솔과 공식 요건을 대조한다. [공개 준비 정책](https://developers.google.com/identity/protocols/oauth2/production-readiness/policy-compliance)을 기준으로 한다.
+External/Testing을 사용한다면 연결 계정을 테스트 사용자에 등록하며, 이 캘린더 권한으로 발급된 refresh token은 7일 만료 조건의 대상이다. Production 전환을 무기한 토큰 보장으로 안내하지 않는다. 사용자 철회 등 다른 만료 사유도 있다. [동의 화면·테스트 사용자](https://developers.google.com/workspace/guides/configure-oauth-consent), [토큰 만료 조건](https://developers.google.com/identity/protocols/oauth2/#expiration)을 따른다.
+
+공용 OAuth 앱은 첫 미리보기에서 제공하지 않는다. 향후 공용 앱으로 확대할 때 개발/운영 프로젝트 분리, 브랜드·연락처·홈페이지·개인정보 안내, 실제 요청 권한과 콘솔의 검증 상태를 확인한다. 해당 공개 승인을 받은 것으로 표시하지 않으며 [공개 준비 정책](https://developers.google.com/identity/protocols/oauth2/production-readiness/policy-compliance)을 다시 대조한다.
 
 현재 사용자의 OAuth JSON·인증 파일을 배포물에 포함하지 않는다. 각자 설정하는 개발용 연결과 공용 앱의 공개 승인을 구분한다. Google 연결 없이도 로컬 달력·서류 흐름을 사용할 수 있다. 이번 작업에서 Cloud 설정·권한·기존 연결을 변경하지 않았다.
 
@@ -75,8 +77,10 @@ npm run check:release
 - [ ] 배포 범위에 포함할 경우 Claude Code·macOS 실사용 확인
 - [ ] 휴대전화 실기기의 달력 터치·가로 이동 확인
 - [x] 현재 소스 설치 방식의 의존성 고지·출처 정리 (바이너리 묶음 배포 제외)
-- [ ] Google OAuth 공개 제공 방식·요건 확정
+- [x] 첫 미리보기의 Google 제공 방식 확정: 로컬 기본·개인 OAuth 선택 연결 및 제한 안내
 - [ ] 동의한 친구의 수동 피드백 수집·발견 문제 수정·재확인
 - [ ] 검증된 커밋에 태그·릴리스 노트와 지원 한계를 연결한 뒤 공개
 
 설치 검증은 [2026-11-05 기록](work-log/2026-11-05.md), 의존성 고지는 [2026-11-08 기록](work-log/2026-11-08.md)을 따른다. 미완료 항목은 #6에서 계속 추적한다.
+
+공용 Google OAuth 앱 운영·검증과 Windows 외 인증 저장소 구현은 지원 확대 때 별도 진행한다. 이번 개인 OAuth 선택 방식 결정으로 완료된 것은 미리보기의 제공 방식과 안내이며, 다른 사용자의 실제 연결 검증이나 Google의 공용 앱 승인이 아니다.

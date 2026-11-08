@@ -1,11 +1,21 @@
 # Google 캘린더 연결과 선택 전송
 
-4단계 개발 버전이다. Windows용 계정 연결 CLI, 로컬 전송 미리보기와 단방향 수동 등록·갱신을 구현했다.
+Windows 미리보기의 선택 기능이다. 계정 연결 CLI, 로컬 전송 미리보기와 단방향 수동 등록·갱신을 구현했다.
 2026-10-31 Windows 실제 계정 동의·전용 캘린더 생성과 가상 이벤트의 등록·중복 방지·갱신·충돌 처리를 확인했다.
-실제 권한 철회와 공개 배포 검증은 남아 있다. 검증 경로는 [실사용 기록](client-validation.md)을 따른다.
+2026-11-04 제품 연결 해제·토큰 철회·기존 전용 캘린더 재연결까지 확인했다. 다른 사용자의 독립 설치와 공용 OAuth 앱 공개 검증은 완료하지 않았다. 검증 경로는 [실사용 기록](client-validation.md)을 따른다.
 기존 로컬 달력 등록이나 공고 분석만으로 Google에 전송하지 않는다.
 
 ## 첫 버전의 선택
+
+2026-11-08 사용자 결정: **로컬 달력이 기본이며 Google은 각자 OAuth 설정으로 선택 연결한다.** Google이 필요 없으면 이 문서의 계정 연결 단계를 건너뛰고 [첫 사용 체험](first-use-preview.md)을 진행한다. 로컬 등록도 사용자가 요청한 공고만 처리하며 보관·분석만으로 자동 등록하지 않는다.
+
+| 사용 방식 | 필요한 준비 | 처리 위치 |
+| --- | --- | --- |
+| 로컬 공고·달력·서류 | JobShot 설치와 MCP 연결 | 사용자 작업 폴더. 선택 자료의 AI 처리는 이용하는 AI 서비스에 따름 |
+| Google 선택 전송 | 위 준비 + 본인 Cloud 프로젝트·Desktop OAuth·브라우저 동의 | Google의 JobShot 전용 캘린더 |
+| Vercel 화면 예시 | 웹 주소 접속 | 가상 화면만 제공. OAuth·실제 자료·일정 전송 없음 |
+
+공용 JobShot OAuth 클라이언트·개발자의 인증 JSON·토큰은 배포하지 않는다. 기존에 연결한 사용자는 연결과 전용 캘린더를 그대로 사용하며, 이 안내 때문에 재연결하거나 권한을 철회할 필요는 없다. 공용 앱 운영·브랜딩·공개 심사는 추후 별도 범위다.
 
 사용자 기획 결정에 따라 JobShot 전용 보조 캘린더를 사용한다. 기존 캘린더 목록을 읽어 선택하는 기능은 없다.
 요청하는 권한은 `https://www.googleapis.com/auth/calendar.app.created` 하나다.
@@ -20,7 +30,7 @@ Google에 보내는 사용자 내용은 회사·직무·확인된 마감 날짜�
 
 ## 1. 사용자 OAuth 설정 준비
 
-현재는 각 사용자가 본인 Google Cloud 프로젝트의 Desktop OAuth 클라이언트를 준비하는 개발용 흐름이다.
+각 사용자가 본인 Google Cloud 프로젝트의 Desktop OAuth 클라이언트를 준비하는 개발용 선택 연결이다. 첫 사용의 필수 단계가 아니다.
 공용 개발자 서버나 공용 OAuth 자격 증명을 배포하지 않는다.
 
 1. [Google Cloud Console](https://console.cloud.google.com/)에서 사용할 프로젝트를 만들거나 선택하고 **Google Calendar API** (`calendar-json.googleapis.com`)를 활성화한다. 이 구현은 Calendar REST API를 사용하므로 CalDAV API 활성화만으로 준비가 끝나지 않는다.
@@ -30,8 +40,8 @@ Google에 보내는 사용자 내용은 회사·직무·확인된 마감 날짜�
 5. JSON은 프로젝트·OneDrive 밖의 사용자 전용 폴더에 보관한다. 예: `C:\JobShotAuth\client_secret_jobshot.json`. 파일 내용이나 토큰을 대화·이슈·PR에 붙여넣지 않는다.
 
 자세한 준비 절차는 [OAuth 동의 화면 안내](https://developers.google.com/workspace/guides/configure-oauth-consent)와 [Desktop 앱 인증 안내](https://developers.google.com/identity/protocols/oauth2/native-app)를 따른다.
-External/Testing 프로젝트의 이 권한에는 7일 갱신 토큰 만료 조건이 적용될 수 있다. 만료·철회 시 다시 연결한다.
-테스트 성공을 공개 배포 심사 완료로 표현하지 않는다. 배포 시 동의 화면·권한 심사와 사용자 제한을 별도로 확인한다.
+2026-11-08 공식 문서 재확인: External/Testing 프로젝트에서 이 캘린더 권한으로 발급한 갱신 토큰은 7일 만료 조건의 대상이다. 만료·철회 시 다시 연결한다. Production 전환을 무기한 연결 보장이나 오류 해결의 필수 단계로 안내하지 않는다.
+테스트 성공을 공개 배포 심사 완료로 표현하지 않는다. 공용 앱으로 확대할 때 동의 화면·권한 심사와 사용자 제한을 별도로 확인한다. 개인 프로젝트도 Google의 계정·조직 정책에 따라 연결이 제한될 수 있으며 정책을 우회하지 않는다.
 [Google 토큰 만료 설명](https://developers.google.com/identity/protocols/oauth2#expiration)
 
 ## 2. Windows에서 계정 연결
