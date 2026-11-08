@@ -1,10 +1,10 @@
 # 배포 준비: 0.5 미리보기
 
-기준일: 2026-11-05. [이슈 #6](https://github.com/samuel426/jobshot-mcp/issues/6)의 준비 기록이며 공개 릴리스 완료 안내가 아니다.
+기준일: 2026-11-08. [이슈 #6](https://github.com/samuel426/jobshot-mcp/issues/6)의 준비 기록이며 로컬 MCP 공개 릴리스 완료 안내가 아니다.
 
 ## 배포 대상과 방식
 
-우선 검증 대상은 Windows·Node.js 24·Codex다. 현재는 GitHub 소스를 내려받아 `npm ci` 후 빌드하는 방식이다. 실행 파일 설치 프로그램, npm 패키지 게시, 웹 호스팅은 준비하지 않았다. 서버를 운영하지 않는 기존 제품 범위를 유지한다.
+우선 검증 대상은 Windows·Node.js 24·Codex다. 현재는 GitHub 소스를 내려받아 `npm ci` 후 빌드하는 방식이다. 실행 파일 설치 프로그램과 npm 패키지 게시는 준비하지 않았다. 별도 [Vercel 화면 예시](../web-prototype/README.md)는 배포했으며 실제 MCP·개인 자료·인증을 호스팅하지 않는다.
 
 사용자는 2026-11-05 Windows·Codex용 미리보기부터 준비하고 소스에 MIT 라이선스를 적용하기로 결정했다. macOS·Claude Code는 이번 미리보기의 지원 대상으로 안내하지 않는다. 정식 배포 또는 지원 확대 전에는 해당 환경의 확인을 먼저 마쳐야 한다.
 
@@ -56,6 +56,8 @@ npm run check:release
 
 2026-11-05 새 설치에서 `npm audit --omit=dev`는 알려진 런타임 취약점 0개를 보고했다. 이 시점의 레지스트리 조회 결과이며 보안 보증이나 개발 의존성 전체 감사는 아니다.
 
+2026-11-08 소스 설치형 의존성 고지 정리를 [제3자 의존성 안내](third-party-notices.md)에 완료했다. MCP SDK의 실제 LICENSE에는 패키지 선언 외에 MIT 전환 고지와 문서 CC-BY-4.0 조건이 있다. 네이티브 라이브러리 29개의 상위 고지·버전도 기록했다. 실행 파일 묶음의 조건 검토는 배포 형태를 바꿀 때 진행한다.
+
 ## Google OAuth 공개 전 조건
 
 2026-11-05 공식 문서를 확인했다. 현재 구현은 Desktop app OAuth와 `calendar.app.created` 권한으로 전용 보조 캘린더를 사용한다. [Calendar 권한 설명](https://developers.google.com/workspace/calendar/api/auth), [Desktop OAuth 안내](https://developers.google.com/identity/protocols/oauth2/native-app)를 따른다. CalDAV API 활성화만으로 이 구현의 Calendar API 설정을 대체하지 않는다.
@@ -72,8 +74,9 @@ npm run check:release
 - [ ] 별도 Windows 사용자 PC에서 문서만 보고 설치·MCP 실제 대화·첫 공고·달력·서류 평가 확인
 - [ ] 배포 범위에 포함할 경우 Claude Code·macOS 실사용 확인
 - [ ] 휴대전화 실기기의 달력 터치·가로 이동 확인
-- [ ] 선택한 배포 방식의 라이선스 고지와 Google OAuth 요건 확정
+- [x] 현재 소스 설치 방식의 의존성 고지·출처 정리 (바이너리 묶음 배포 제외)
+- [ ] Google OAuth 공개 제공 방식·요건 확정
 - [ ] 동의한 친구의 수동 피드백 수집·발견 문제 수정·재확인
 - [ ] 검증된 커밋에 태그·릴리스 노트와 지원 한계를 연결한 뒤 공개
 
-실제 확인 결과는 [2026-11-05 기록](work-log/2026-11-05.md)에 남긴다. 미완료 항목은 #6에서 계속 추적한다.
+설치 검증은 [2026-11-05 기록](work-log/2026-11-05.md), 의존성 고지는 [2026-11-08 기록](work-log/2026-11-08.md)을 따른다. 미완료 항목은 #6에서 계속 추적한다.

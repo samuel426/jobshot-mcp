@@ -69,5 +69,6 @@ GitHub Actions에서도 Windows와 Linux에 같은 검사를 실행합니다.
 ## 공개 및 라이선스 상태
 
 JobShot 소스는 [MIT 라이선스](LICENSE)로 제공합니다. 의존성은 각자의 라이선스를 따릅니다.
+[제3자 의존성 안내](docs/third-party-notices.md)에 소스 설치 방식의 고지 위치와 Windows 이미지 처리 라이브러리 출처를 정리했습니다.
 Windows·Codex용 소스 설치형 미리보기 배포를 준비 중이며, 현재 저장소를 정식 배포판으로 안내하지 않습니다.
 [배포 준비와 지원 한계](docs/release-readiness.md)를 확인하세요.
